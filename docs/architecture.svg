@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 300" font-family="'Segoe UI',system-ui,sans-serif" role="img" aria-label="Defuse architecture">
+  <defs>
+    <linearGradient id="dawn" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2e3a8c"/><stop offset="0.5" stop-color="#6b4bd6"/><stop offset="1" stop-color="#e9a23b"/>
+    </linearGradient>
+    <marker id="a" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#8795a3"/></marker>
+  </defs>
+  <style>
+    .box{fill:#ffffff;stroke:#b6c2cd;rx:10}
+    .t{fill:#16222c;font-size:13px;font-weight:600}
+    .s{fill:#4c5c69;font-size:11px}
+    .ph{fill:#eef2f6;stroke:#d2dae2}
+    .e{stroke:#8795a3;stroke-width:1.4;fill:none}
+    .c{stroke:#6b4bd6;stroke-width:2;fill:none}
+  </style>
+  <rect width="960" height="300" fill="#e7ecf1"/>
+
+  <rect x="24" y="40" width="150" height="56" rx="10" class="box"/>
+  <text x="38" y="64" class="t">Advisory (human)</text>
+  <text x="38" y="82" class="s">worm-advisory work item</text>
+
+  <rect x="210" y="40" width="150" height="56" rx="10" class="box"/>
+  <text x="224" y="64" class="t">IOC set</text>
+  <text x="224" y="82" class="s">LLM → JSON, validated</text>
+
+  <rect x="396" y="40" width="150" height="56" rx="10" class="box"/>
+  <text x="410" y="64" class="t">Collectors</text>
+  <text x="410" y="82" class="s">GitLab API, no values</text>
+
+  <rect x="582" y="40" width="150" height="56" rx="10" class="box"/>
+  <text x="596" y="64" class="t">Exposure graph</text>
+  <text x="596" y="82" class="s">epidemic tree</text>
+
+  <rect x="768" y="40" width="168" height="56" rx="10" class="box"/>
+  <text x="782" y="64" class="t">Planner</text>
+  <text x="782" y="82" class="s">C1–C6 layered DAG</text>
+
+  <line x1="174" y1="68" x2="206" y2="68" class="e" marker-end="url(#a)"/>
+  <line x1="360" y1="68" x2="392" y2="68" class="e" marker-end="url(#a)"/>
+  <line x1="546" y1="68" x2="578" y2="68" class="e" marker-end="url(#a)"/>
+  <line x1="732" y1="68" x2="764" y2="68" class="e" marker-end="url(#a)"/>
+
+  <!-- phase strip -->
+  <rect x="24" y="150" width="912" height="56" rx="10" fill="url(#dawn)" opacity="0.08" stroke="#d2dae2"/>
+  <text x="38" y="138" class="s">Child pipeline — the GitLab graph reads as the plan</text>
+  <g>
+    <!-- seven phases -->
+    <g>
+      <rect x="40"  y="162" width="118" height="32" rx="8" class="ph"/><text x="52"  y="182" class="t" font-size="11">isolate</text>
+      <rect x="168" y="162" width="118" height="32" rx="8" class="ph"/><text x="180" y="182" class="t" font-size="11">preserve</text>
+      <rect x="296" y="162" width="118" height="32" rx="8" class="ph"/><text x="308" y="182" class="t" font-size="11">eradicate</text>
+      <rect x="424" y="162" width="118" height="32" rx="8" class="ph"/><text x="436" y="182" class="t" font-size="11">rotate</text>
+      <rect x="552" y="162" width="118" height="32" rx="8" class="ph"/><text x="564" y="182" class="t" font-size="11">quarantine</text>
+      <rect x="680" y="162" width="118" height="32" rx="8" class="ph"/><text x="692" y="182" class="t" font-size="11">rebuild</text>
+      <rect x="808" y="162" width="118" height="32" rx="8" class="ph"/><text x="820" y="182" class="t" font-size="11">verify</text>
+    </g>
+  </g>
+  <path d="M99,162 C99,130 445,130 445,162" class="c" marker-end="url(#a)"/>
+  <text x="200" y="124" fill="#6b4bd6" font-size="11" font-weight="600">C1 — isolate before rotate</text>
+
+  <line x1="852" y1="96" x2="700" y2="150" class="e" marker-end="url(#a)"/>
+  <text x="300" y="250" class="s">Verify: re-collect · sinkhole quiet · sentinel intact · Security Standard timings from real timestamps</text>
+</svg>
