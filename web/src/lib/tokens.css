@@ -1,0 +1,123 @@
+/* Defuse design tokens. One source for light ("daylight") and dark ("night watch"). */
+
+:root {
+  /* core palette */
+  --mist: #e7ecf1;
+  --ink: #16222c;
+  --signal: #0e8a6b;
+  --ember: #d6402a;
+  --bond: #6b4bd6;
+
+  /* derived surfaces */
+  --page: var(--mist);
+  --canvas: #f4f7fa;
+  --card: #ffffff;
+  --card-sunk: #eef2f6;
+  --line: #d2dae2;
+  --line-strong: #b6c2cd;
+  --text: var(--ink);
+  --text-soft: #4c5c69;
+  --text-faint: #7688958f;
+
+  /* roles */
+  --accent: var(--signal);
+  --accent-soft: #d6ede5;
+  --alarm: var(--ember);
+  --alarm-soft: #f7ddd7;
+  --warn: #c67a16;
+  --warn-soft: #f6e7cc;
+  --constraint: var(--bond);
+  --constraint-soft: #e6dffb;
+
+  /* the one expressive gradient: dawn over a ridge */
+  --dawn: linear-gradient(104deg, #2e3a8c 0%, #6b4bd6 44%, #e9a23b 100%);
+  --horizon: linear-gradient(180deg, rgba(46, 58, 140, 0.1) 0%, rgba(233, 162, 59, 0.05) 55%, transparent 100%);
+
+  /* containment phase ramp (a true sequence: cool slate -> signal) */
+  --phase-isolate: #5566a8;
+  --phase-preserve: #4f7b9e;
+  --phase-eradicate: #3f8f8c;
+  --phase-rotate: #2f9576;
+  --phase-quarantine: #c67a16;
+  --phase-rebuild: #2f8a8f;
+  --phase-verify: #0e8a6b;
+
+  /* type */
+  --font-display: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
+  --font-text: 'Hanken Grotesk', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', monospace;
+
+  --t-xs: 0.8rem;
+  --t-sm: 0.9rem;
+  --t-base: 1rem;
+  --t-md: 1.25rem;
+  --t-lg: 1.563rem;
+  --t-xl: 1.953rem;
+  --t-2xl: 2.441rem;
+  --t-3xl: 3.052rem;
+
+  /* space */
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 24px;
+  --s-6: 32px;
+  --s-7: 48px;
+  --s-8: 64px;
+
+  --r-tile: 14px;
+  --r-chip: 999px;
+  --r-sm: 8px;
+  --shadow: 0 1px 2px rgba(22, 34, 44, 0.04), 0 8px 24px -12px rgba(22, 34, 44, 0.18);
+  --shadow-lift: 0 2px 6px rgba(22, 34, 44, 0.08), 0 18px 44px -18px rgba(22, 34, 44, 0.28);
+  --rail: 232px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --page: #0f1821;
+    --canvas: #122029;
+    --card: #17262f;
+    --card-sunk: #0e1a22;
+    --line: #263843;
+    --line-strong: #37505d;
+    --text: #e7ecf1;
+    --text-soft: #a6b6c2;
+    --text-faint: #6f8593;
+    --accent: #30b893;
+    --accent-soft: #123a30;
+    --alarm: #f36a51;
+    --alarm-soft: #3b1a14;
+    --warn: #e0a042;
+    --warn-soft: #3a2c12;
+    --constraint: #9a80f0;
+    --constraint-soft: #241a4a;
+    --horizon: linear-gradient(180deg, rgba(107, 75, 214, 0.22) 0%, rgba(233, 162, 59, 0.07) 55%, transparent 100%);
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px -12px rgba(0, 0, 0, 0.6);
+    --shadow-lift: 0 2px 6px rgba(0, 0, 0, 0.4), 0 18px 44px -18px rgba(0, 0, 0, 0.7);
+  }
+}
+
+:root[data-theme='dark'] {
+  --page: #0f1821;
+  --canvas: #122029;
+  --card: #17262f;
+  --card-sunk: #0e1a22;
+  --line: #263843;
+  --line-strong: #37505d;
+  --text: #e7ecf1;
+  --text-soft: #a6b6c2;
+  --text-faint: #6f8593;
+  --accent: #30b893;
+  --accent-soft: #123a30;
+  --alarm: #f36a51;
+  --alarm-soft: #3b1a14;
+  --warn: #e0a042;
+  --warn-soft: #3a2c12;
+  --constraint: #9a80f0;
+  --constraint-soft: #241a4a;
+  --horizon: linear-gradient(180deg, rgba(107, 75, 214, 0.22) 0%, rgba(233, 162, 59, 0.07) 55%, transparent 100%);
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px -12px rgba(0, 0, 0, 0.6);
+  --shadow-lift: 0 2px 6px rgba(0, 0, 0, 0.4), 0 18px 44px -18px rgba(0, 0, 0, 0.7);
+}

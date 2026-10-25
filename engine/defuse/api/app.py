@@ -138,6 +138,13 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         row = await _row(store, incident_id)
         return row.metrics or {}
 
+    @app.get("/api/incidents/{incident_id}/events.json")
+    async def event_backlog(
+        incident_id: str, after: int = 0, store: Store = Depends(get_store)
+    ) -> list[dict[str, Any]]:
+        await _row(store, incident_id)
+        return await store.get_events(incident_id, after_seq=after)
+
     @app.get("/api/incidents/{incident_id}/events")
     async def stream_events(
         incident_id: str,
