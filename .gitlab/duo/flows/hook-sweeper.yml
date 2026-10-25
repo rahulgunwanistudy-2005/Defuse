@@ -1,0 +1,20 @@
+# Flow: hook-sweeper (headless, run from the containment pipeline)
+# Given a deterministic list of files and repos from the exposure graph, opens one MR per repo
+# removing the planted hooks and writes a clear description. A protected CI diff guard rejects any
+# MR from this flow that touches a file outside the provided list.
+version: v1
+environment: ambient
+coding_environment: full
+components:
+  - name: sweep_hooks
+    type: AgentComponent
+    prompt_id: defuse/remove_planted_hooks
+    inputs:
+      - "context:goal"
+      - from: "context:project_id"
+        as: project_id
+routers:
+  - from: sweep_hooks
+    to: end
+flow:
+  entry_point: sweep_hooks

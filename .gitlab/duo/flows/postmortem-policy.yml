@@ -1,0 +1,21 @@
+# Flow: postmortem-policy (headless, after verification)
+# Writes the incident record (timeline, exposure tree, actions, metrics, what could not be
+# verified) as a work item, and opens a policy MR: .npmrc ignore-scripts=true where safe,
+# minimum release age, CI variable scope tightening for every over-scoped secret found, and
+# lockfile enforcement. A security incident becomes a policy.
+version: v1
+environment: ambient
+coding_environment: full
+components:
+  - name: write_postmortem
+    type: AgentComponent
+    prompt_id: defuse/postmortem_and_policy
+    inputs:
+      - "context:goal"
+      - from: "context:project_id"
+        as: project_id
+routers:
+  - from: write_postmortem
+    to: end
+flow:
+  entry_point: write_postmortem

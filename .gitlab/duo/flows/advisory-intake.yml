@@ -1,0 +1,21 @@
+# Flow: advisory-intake
+# Trigger: Work item Created (label worm-advisory). A human pastes an advisory into the work
+# item; this flow extracts a structured IOC set as JSON and commits it with an MR.
+# The LLM interprets and drafts; CI validates the JSON against engine/defuse/model/ioc.schema.json.
+# On an ambiguous field the flow comments which field was unclear and stops — a calibrated refusal.
+version: v1
+environment: ambient
+coding_environment: none
+components:
+  - name: extract_ioc
+    type: AgentComponent
+    prompt_id: defuse/advisory_to_ioc
+    inputs:
+      - "context:goal"
+      - from: "context:project_id"
+        as: project_id
+routers:
+  - from: extract_ioc
+    to: end
+flow:
+  entry_point: extract_ioc

@@ -1,0 +1,21 @@
+# Flow: incident-commander
+# Trigger: Pipeline events (Failed). The product pipeline's detector job fails when a lockfile
+# resolves a version matching an active IOC, or on a provenance mismatch. A human's routine push
+# started that pipeline, so the trigger fires. The flow reads the failed job, opens an incident
+# work item, and commits an incident request file that starts the engine pipeline.
+version: v1
+environment: ambient
+coding_environment: none
+components:
+  - name: open_incident
+    type: AgentComponent
+    prompt_id: defuse/pipeline_to_incident
+    inputs:
+      - "context:goal"
+      - from: "context:project_id"
+        as: project_id
+routers:
+  - from: open_incident
+    to: end
+flow:
+  entry_point: open_incident

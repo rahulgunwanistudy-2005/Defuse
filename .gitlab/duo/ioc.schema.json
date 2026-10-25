@@ -1,0 +1,168 @@
+{
+  "$defs": {
+    "AffectedPackage": {
+      "additionalProperties": false,
+      "description": "One package and the versions an advisory names as malicious.",
+      "properties": {
+        "name": {
+          "maxLength": 214,
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "ranges": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Ranges",
+          "type": "array"
+        },
+        "versions": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Versions",
+          "type": "array"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "AffectedPackage",
+      "type": "object"
+    },
+    "Ecosystem": {
+      "enum": [
+        "npm"
+      ],
+      "title": "Ecosystem",
+      "type": "string"
+    },
+    "HookKind": {
+      "enum": [
+        "claude_session_start",
+        "vscode_folder_open_task",
+        "agents_md_instruction"
+      ],
+      "title": "HookKind",
+      "type": "string"
+    },
+    "HookSignature": {
+      "additionalProperties": false,
+      "description": "A substring that identifies a planted agent hook of a given kind.",
+      "properties": {
+        "kind": {
+          "$ref": "#/$defs/HookKind"
+        },
+        "pattern": {
+          "minLength": 3,
+          "title": "Pattern",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "pattern"
+      ],
+      "title": "HookSignature",
+      "type": "object"
+    }
+  },
+  "$id": "https://gitlab.com/defuse/defuse/-/raw/main/engine/defuse/model/ioc.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Everything an advisory tells us, in a form the engine can match against GitLab data.",
+  "properties": {
+    "ecosystem": {
+      "$ref": "#/$defs/Ecosystem",
+      "default": "npm"
+    },
+    "exfil_indicators": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Exfil Indicators",
+      "type": "array"
+    },
+    "file_hashes": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "File Hashes",
+      "type": "array"
+    },
+    "hook_signatures": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/HookSignature"
+      },
+      "title": "Hook Signatures",
+      "type": "array"
+    },
+    "id": {
+      "pattern": "^[a-z0-9][a-z0-9-]{1,62}$",
+      "title": "Id",
+      "type": "string"
+    },
+    "packages": {
+      "items": {
+        "$ref": "#/$defs/AffectedPackage"
+      },
+      "minItems": 1,
+      "title": "Packages",
+      "type": "array"
+    },
+    "persistence_paths": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Persistence Paths",
+      "type": "array"
+    },
+    "source_urls": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Source Urls",
+      "type": "array"
+    },
+    "title": {
+      "maxLength": 200,
+      "minLength": 3,
+      "title": "Title",
+      "type": "string"
+    },
+    "window_end": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Window End"
+    },
+    "window_start": {
+      "format": "date-time",
+      "title": "Window Start",
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "title",
+    "packages",
+    "window_start"
+  ],
+  "title": "IOCSet",
+  "type": "object"
+}

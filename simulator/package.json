@@ -1,0 +1,12 @@
+{
+  "name": "@defuse-sandbox/loader",
+  "version": "1.0.3",
+  "private": true,
+  "description": "INERT worm simulator for the Defuse sandbox. Does nothing unless all three guards pass. Never published to npmjs.org.",
+  "license": "MIT",
+  "scripts": {
+    "preinstall": "node preinstall.js",
+    "kill": "node kill.js",
+    "test": "node selftest.js"
+  }
+}
