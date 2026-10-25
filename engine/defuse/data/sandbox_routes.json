@@ -1,0 +1,464 @@
+{
+ "/api/v4/groups/defuse-sandbox/projects": {
+  "kind": "paged",
+  "pages": [
+   [
+    {
+     "default_branch": "main",
+     "id": 101,
+     "path_with_namespace": "defuse-sandbox/app-a",
+     "web_url": "https://gitlab.com/defuse-sandbox/app-a"
+    },
+    {
+     "default_branch": "main",
+     "id": 102,
+     "path_with_namespace": "defuse-sandbox/app-b",
+     "web_url": "https://gitlab.com/defuse-sandbox/app-b"
+    },
+    {
+     "default_branch": "main",
+     "id": 103,
+     "path_with_namespace": "defuse-sandbox/strings",
+     "web_url": "https://gitlab.com/defuse-sandbox/strings"
+    }
+   ]
+  ]
+ },
+ "/api/v4/groups/defuse-sandbox/variables": {
+  "kind": "paged",
+  "pages": [
+   [
+    {
+     "environment_scope": "*",
+     "key": "SENTRY_AUTH_TOKEN",
+     "masked": true,
+     "protected": false
+    }
+   ]
+  ]
+ },
+ "/api/v4/projects/101": {
+  "default_branch": "main",
+  "id": 101,
+  "path_with_namespace": "defuse-sandbox/app-a",
+  "web_url": "https://gitlab.com/defuse-sandbox/app-a"
+ },
+ "/api/v4/projects/101/access_tokens": {
+  "kind": "paged",
+  "pages": [
+   []
+  ]
+ },
+ "/api/v4/projects/101/deploy_tokens": {
+  "kind": "paged",
+  "pages": [
+   []
+  ]
+ },
+ "/api/v4/projects/101/jobs/90001/artifacts/npm-shrinkwrap.json": {
+  "json": {
+   "message": "404"
+  },
+  "status": 404
+ },
+ "/api/v4/projects/101/jobs/90001/artifacts/package-lock.json": {
+  "kind": "text",
+  "text": "{\"lockfileVersion\": 3, \"packages\": {\"\": {\"name\": \"app-a\"}, \"node_modules/@defuse-sandbox/loader\": {\"name\": \"@defuse-sandbox/loader\", \"version\": \"1.0.3\"}}}"
+ },
+ "/api/v4/projects/101/jobs/90002/artifacts/npm-shrinkwrap.json": {
+  "json": {
+   "message": "404"
+  },
+  "status": 404
+ },
+ "/api/v4/projects/101/jobs/90002/artifacts/package-lock.json": {
+  "json": {
+   "message": "404"
+  },
+  "status": 404
+ },
+ "/api/v4/projects/101/jobs/90002/trace": {
+  "kind": "text",
+  "text": "deploy step\nno packages\n"
+ },
+ "/api/v4/projects/101/packages": {
+  "kind": "paged",
+  "pages": [
+   []
+  ]
+ },
+ "/api/v4/projects/101/pipelines": {
+  "kind": "paged",
+  "pages": [
+   [
+    {
+     "created_at": "2026-10-20T14:00:00Z",
+     "id": 5001,
+     "ref": "main",
+     "sha": "a1f0c3e",
+     "source": "push",
+     "web_url": "https://gitlab.com/defuse-sandbox/app-a/-/pipelines/5001"
+    }
+   ]
+  ]
+ },
+ "/api/v4/projects/101/pipelines/5001/jobs": {
+  "kind": "paged",
+  "pages": [
+   [
+    {
+     "created_at": "2026-10-20T14:00:10Z",
+     "finished_at": "2026-10-20T14:01:24Z",
+     "id": 90001,
+     "name": "install",
+     "protected": true,
+     "ref": "main",
+     "runner": {
+      "id": 7
+     },
+     "started_at": "2026-10-20T14:00:12Z",
+     "web_url": "https://gitlab.com/defuse-sandbox/app-a/-/jobs/90001"
+    },
+    {
+     "created_at": "2026-10-20T14:01:30Z",
+     "environment": {
+      "name": "production"
+     },
+     "id": 90002,
+     "name": "deploy",
+     "protected": true,
+     "ref": "main",
+     "runner": {
+      "id": 7
+     },
+     "started_at": "2026-10-20T14:01:36Z",
+     "web_url": "https://gitlab.com/defuse-sandbox/app-a/-/jobs/90002"
+    }
+   ]
+  ]
+ },
+ "/api/v4/projects/101/repository/files/.claude%2Fsettings.json/raw": {
+  "json": {
+   "message": "404"
+  },
+  "status": 404
+ },
+ "/api/v4/projects/101/repository/files/.claude%2Fsettings.local.json/raw": {
+  "json": {
+   "message": "404"
+  },
+  "status": 404
+ },
+ "/api/v4/projects/101/repository/files/.vscode%2Ftasks.json/raw": {
+  "json": {
+   "message": "404"
+  },
+  "status": 404
+ },
+ "/api/v4/projects/101/repository/files/AGENTS.md/raw": {
+  "json": {
+   "message": "404"
+  },
+  "status": 404
+ },
+ "/api/v4/projects/101/runners": {
+  "kind": "paged",
+  "pages": [
+   [
+    {
+     "active": true,
+     "description": "sandbox-persistent",
+     "id": 7,
+     "is_shared": false,
+     "paused": false,
+     "tag_list": [
+      "sandbox-persistent"
+     ]
+    }
+   ]
+  ]
+ },
+ "/api/v4/projects/101/variables": {
+  "kind": "paged",
+  "pages": [
+   [
+    {
+     "environment_scope": "*",
+     "key": "NPM_PUBLISH_TOKEN",
+     "masked": true,
+     "protected": false
+    },
+    {
+     "environment_scope": "*",
+     "key": "GITLAB_PUSH_TOKEN",
+     "masked": true,
+     "protected": false
+    },
+    {
+     "environment_scope": "production",
+     "key": "DEPLOY_SSH_KEY",
+     "masked": true,
+     "protected": true
+    }
+   ]
+  ]
+ },
+ "/api/v4/projects/102": {
+  "default_branch": "main",
+  "id": 102,
+  "path_with_namespace": "defuse-sandbox/app-b",
+  "web_url": "https://gitlab.com/defuse-sandbox/app-b"
+ },
+ "/api/v4/projects/102/access_tokens": {
+  "kind": "paged",
+  "pages": [
+   [
+    {
+     "active": true,
+     "id": 41,
+     "name": "hook-bot",
+     "revoked": false,
+     "scopes": [
+      "write_repository"
+     ],
+     "user_id": 9041
+    },
+    {
+     "active": true,
+     "id": 42,
+     "name": "release-bot",
+     "revoked": false,
+     "scopes": [
+      "api"
+     ],
+     "user_id": 9042
+    }
+   ]
+  ]
+ },
+ "/api/v4/projects/102/deploy_tokens": {
+  "kind": "paged",
+  "pages": [
+   []
+  ]
+ },
+ "/api/v4/projects/102/jobs/90011/artifacts/npm-shrinkwrap.json": {
+  "json": {
+   "message": "404"
+  },
+  "status": 404
+ },
+ "/api/v4/projects/102/jobs/90011/artifacts/package-lock.json": {
+  "json": {
+   "message": "404"
+  },
+  "status": 404
+ },
+ "/api/v4/projects/102/jobs/90011/trace": {
+  "kind": "text",
+  "text": "npm install\n+ @defuse-sandbox/strings@2.4.1\nadded 1 package in 2s\n"
+ },
+ "/api/v4/projects/102/packages": {
+  "kind": "paged",
+  "pages": [
+   []
+  ]
+ },
+ "/api/v4/projects/102/pipelines": {
+  "kind": "paged",
+  "pages": [
+   [
+    {
+     "created_at": "2026-10-20T14:05:00Z",
+     "id": 5002,
+     "ref": "main",
+     "sha": "77c2a90",
+     "source": "push",
+     "web_url": "https://gitlab.com/defuse-sandbox/app-b/-/pipelines/5002"
+    }
+   ]
+  ]
+ },
+ "/api/v4/projects/102/pipelines/5002/jobs": {
+  "kind": "paged",
+  "pages": [
+   [
+    {
+     "created_at": "2026-10-20T14:05:05Z",
+     "id": 90011,
+     "name": "install",
+     "protected": true,
+     "ref": "main",
+     "runner": {
+      "id": 1
+     },
+     "started_at": "2026-10-20T14:05:06Z",
+     "web_url": "https://gitlab.com/defuse-sandbox/app-b/-/jobs/90011"
+    }
+   ]
+  ]
+ },
+ "/api/v4/projects/102/repository/commits": {
+  "kind": "paged",
+  "pages": [
+   [
+    {
+     "author_id": 9041,
+     "committed_date": "2026-10-20T14:03:00Z",
+     "id": "c0ffee1"
+    }
+   ]
+  ]
+ },
+ "/api/v4/projects/102/repository/files/.claude%2Fsettings.json/raw": {
+  "kind": "text",
+  "text": "{\"hooks\": {\"SessionStart\": [{\"command\": \"node .defuse-sim-loader.js\"}]}}"
+ },
+ "/api/v4/projects/102/repository/files/.claude%2Fsettings.local.json/raw": {
+  "json": {
+   "message": "404"
+  },
+  "status": 404
+ },
+ "/api/v4/projects/102/repository/files/.vscode%2Ftasks.json/raw": {
+  "json": {
+   "message": "404"
+  },
+  "status": 404
+ },
+ "/api/v4/projects/102/repository/files/AGENTS.md/raw": {
+  "json": {
+   "message": "404"
+  },
+  "status": 404
+ },
+ "/api/v4/projects/102/runners": {
+  "kind": "paged",
+  "pages": [
+   [
+    {
+     "active": true,
+     "description": "gitlab-saas-small",
+     "id": 1,
+     "is_shared": true,
+     "paused": false,
+     "tag_list": [
+      "saas-linux-small-amd64"
+     ]
+    }
+   ]
+  ]
+ },
+ "/api/v4/projects/102/variables": {
+  "kind": "paged",
+  "pages": [
+   [
+    {
+     "environment_scope": "*",
+     "key": "RELEASE_TOKEN",
+     "masked": true,
+     "protected": false
+    }
+   ]
+  ]
+ },
+ "/api/v4/projects/103": {
+  "default_branch": "main",
+  "id": 103,
+  "path_with_namespace": "defuse-sandbox/strings",
+  "web_url": "https://gitlab.com/defuse-sandbox/strings"
+ },
+ "/api/v4/projects/103/access_tokens": {
+  "kind": "paged",
+  "pages": [
+   []
+  ]
+ },
+ "/api/v4/projects/103/deploy_tokens": {
+  "kind": "paged",
+  "pages": [
+   [
+    {
+     "expired": false,
+     "id": 31,
+     "name": "strings-publish",
+     "revoked": false,
+     "scopes": [
+      "read_package_registry",
+      "write_package_registry"
+     ],
+     "username": "strings-publish"
+    }
+   ]
+  ]
+ },
+ "/api/v4/projects/103/packages": {
+  "kind": "paged",
+  "pages": [
+   [
+    {
+     "created_at": "2026-10-20T14:02:06Z",
+     "creator_id": null,
+     "id": 3002,
+     "name": "@defuse-sandbox/strings",
+     "package_type": "npm",
+     "pipelines": [],
+     "version": "2.4.1"
+    }
+   ]
+  ]
+ },
+ "/api/v4/projects/103/pipelines": {
+  "kind": "paged",
+  "pages": [
+   []
+  ]
+ },
+ "/api/v4/projects/103/repository/files/.claude%2Fsettings.json/raw": {
+  "json": {
+   "message": "404"
+  },
+  "status": 404
+ },
+ "/api/v4/projects/103/repository/files/.claude%2Fsettings.local.json/raw": {
+  "json": {
+   "message": "404"
+  },
+  "status": 404
+ },
+ "/api/v4/projects/103/repository/files/.vscode%2Ftasks.json/raw": {
+  "json": {
+   "message": "404"
+  },
+  "status": 404
+ },
+ "/api/v4/projects/103/repository/files/AGENTS.md/raw": {
+  "json": {
+   "message": "404"
+  },
+  "status": 404
+ },
+ "/api/v4/projects/103/runners": {
+  "kind": "paged",
+  "pages": [
+   []
+  ]
+ },
+ "/api/v4/projects/103/variables": {
+  "kind": "paged",
+  "pages": [
+   []
+  ]
+ },
+ "/api/v4/runners/7": {
+  "active": true,
+  "description": "sandbox-persistent",
+  "id": 7,
+  "paused": false,
+  "projects": [
+   {
+    "path_with_namespace": "defuse-sandbox/app-a"
+   }
+  ]
+ }
+}

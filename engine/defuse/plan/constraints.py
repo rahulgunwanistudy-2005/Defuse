@@ -414,11 +414,14 @@ def _c3_keep_one_lifeline(
 def _c4_propagation_first(
     exposure: Exposure, index: dict[ActionKind, dict[str, Action]]
 ) -> Iterator[Requirement]:
+    # A watched publish secret is held late by C1 (its host must be neutralised first), and an
+    # isolated host cannot propagate, so C4 applies only to secrets free to rotate now.
+    watched = exposure.watched_secret_ids()
     publish_rotations = tuple(
         sorted(
             a.id
             for s in exposure.secrets
-            if s.publish_capable
+            if s.publish_capable and s.id not in watched
             for a in [index.get(ActionKind.ROTATE_SECRET, {}).get(s.id)]
             if a is not None
         )
@@ -427,16 +430,20 @@ def _c4_propagation_first(
         return
     publish_ids = {s.id for s in exposure.secrets if s.publish_capable}
     for secret in exposure.secrets:
-        if secret.id in publish_ids:
+        if secret.id in publish_ids or secret.id in watched:
             continue
         rotate = _present(index, ActionKind.ROTATE_SECRET, secret.id)
-        if rotate:
+        if not rotate:
+            continue
+        # Every publish rotation must precede this one (a conjunction), so emit one hard edge
+        # each rather than a single before_any (which the resolver reads as "any one of").
+        for publish_rotation in publish_rotations:
             yield Requirement(
                 after=rotate,
-                before_any=publish_rotations,
+                before_any=(publish_rotation,),
                 reason=EdgeReason.CONSTRAINT,
                 constraint_id="C4",
-                note="rotate publish-capable secrets before other secrets",
+                note="rotate unwatched publish-capable secrets before other secrets",
             )
 
 

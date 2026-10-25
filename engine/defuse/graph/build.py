@@ -123,8 +123,14 @@ class _Builder:
         for job in self.facts.jobs:
             observed.update((d.name, d.version) for d in job.resolved)
         observed.update((p.name, p.version) for p in self.facts.published_packages)
+        hashes = set(self.ioc.file_hashes)
+        by_hash = {
+            (p.name, p.version)
+            for p in self.facts.published_packages
+            if hashes & set(p.file_sha256s)
+        }
         for name, version in sorted(observed):
-            if self.ioc.affected(name, version):
+            if self.ioc.affected(name, version) or (name, version) in by_hash:
                 self._add_version(name, version, generation=0, rogue=False)
         for pkg in self.facts.published_packages:
             if (pkg.name, pkg.version) in self.version_gen:

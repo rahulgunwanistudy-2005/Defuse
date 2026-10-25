@@ -40,6 +40,7 @@ dev = [
   "mypy>=1.10",
   "ruff>=0.5",
   "types-PyYAML>=6.0",
+  "asgi-lifespan>=2.1.0",
 ]
 
 [build-system]
@@ -49,18 +50,25 @@ build-backend = "hatchling.build"
 [tool.hatch.build.targets.wheel]
 packages = ["defuse"]
 
+[tool.hatch.build.targets.wheel.force-include]
+"defuse/data/sandbox_routes.json" = "defuse/data/sandbox_routes.json"
+
 [tool.ruff]
 line-length = 100
 target-version = "py312"
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "B", "UP", "S", "ASYNC", "RUF", "SIM", "PT", "C4", "PL"]
+# PLC0415: lazy imports keep CLI startup fast and avoid heavy API deps at import time.
+extend-ignore = ["PLC0415"]
 # S105/S106 flag every identifier containing "token" or "secret"; this codebase is about them.
 ignore = ["PLR0913", "PLR2004", "PLR0911", "PLR0912", "PLR0915", "S105", "S106"]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["S101", "S105", "S106", "PLR2004", "S108"]
-"defuse/store/migrations/**" = ["E501"]
+"defuse/store/migrations/**" = ["E501", "PLC0415"]
+# FastAPI reads dependencies from call-expression defaults; that is the framework idiom.
+"defuse/api/app.py" = ["B008"]
 
 [tool.mypy]
 strict = true

@@ -286,3 +286,25 @@ def scenario_facts() -> CollectedFacts:
             ),
         ),
     )
+
+
+def scenario_cleaned_facts() -> CollectedFacts:
+    """The facts a post-containment re-collection would return: infection gone.
+
+    Infected jobs no longer resolve an affected version, the rogue version is no longer
+    published, the watcher unit is gone, and the planted hook is removed.
+    """
+
+    facts = scenario_facts()
+    clean_jobs = tuple(job.model_copy(update={"resolved": ()}) for job in facts.jobs)
+    return facts.model_copy(
+        update={
+            "collected_at": _at(20),
+            "jobs": clean_jobs,
+            "published_packages": tuple(
+                p for p in facts.published_packages if p.version != "2.4.1"
+            ),
+            "hook_findings": (),
+            "watcher_findings": (),
+        }
+    )

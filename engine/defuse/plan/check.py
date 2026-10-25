@@ -100,11 +100,18 @@ def check_plan(graph: ExposureGraph, plan: Plan) -> list[Violation]:
                     )
                 )
 
+    # A watched secret is held by C1 until its host is neutralised, so C4 (publish-first)
+    # applies only among secrets free to rotate now.
+    watched = exposure.watched_secret_ids()
     publish_rot = [
-        at(ActionKind.ROTATE_SECRET, s.id) for s in exposure.secrets if s.publish_capable
+        at(ActionKind.ROTATE_SECRET, s.id)
+        for s in exposure.secrets
+        if s.publish_capable and s.id not in watched
     ]
     other_rot = [
-        at(ActionKind.ROTATE_SECRET, s.id) for s in exposure.secrets if not s.publish_capable
+        at(ActionKind.ROTATE_SECRET, s.id)
+        for s in exposure.secrets
+        if not s.publish_capable and s.id not in watched
     ]
     p_max = max((x for x in publish_rot if x is not None), default=None)
     o_min = min((x for x in other_rot if x is not None and x >= 0), default=None)

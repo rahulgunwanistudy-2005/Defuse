@@ -103,7 +103,17 @@ class Verification(BaseModel):
 
     @property
     def passed(self) -> bool:
+        """No check failed. Unverified checks are allowed and listed in `unverified`."""
+
+        return not any(c.outcome == CheckOutcome.FAILED for c in self.checks)
+
+    @property
+    def fully_verified(self) -> bool:
         return all(c.outcome == CheckOutcome.PASSED for c in self.checks)
+
+    @property
+    def unverified(self) -> tuple[str, ...]:
+        return tuple(c.id for c in self.checks if c.outcome == CheckOutcome.UNVERIFIED)
 
 
 class Metrics(BaseModel):

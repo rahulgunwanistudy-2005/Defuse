@@ -119,6 +119,8 @@ class PublishedPackageFact(_Fact):
     pipeline_sha: str | None = None
     commit_exists: bool | None = None
     published_by: str | None = None
+    creator_id: int | None = None
+    file_sha256s: tuple[str, ...] = ()
 
 
 class HookFinding(_Fact):

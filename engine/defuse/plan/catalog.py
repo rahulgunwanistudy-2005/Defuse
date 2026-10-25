@@ -61,6 +61,9 @@ class Exposure:
     def watched(self, watcher: WatcherNode) -> list[str]:
         return sorted(e.dst for e in self.graph.out(watcher.id, EdgeKind.WATCHES))
 
+    def watched_secret_ids(self) -> frozenset[str]:
+        return frozenset(s for w in self.watchers for s in self.watched(w))
+
     def watcher_host(self, watcher: WatcherNode) -> str:
         return host_id(watcher.host)
 
