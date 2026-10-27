@@ -1,0 +1,44 @@
+# Local packaging only. Does not provision hosting or access a live GitLab account.
+services:
+  engine:
+    build: ./engine
+    ports: ["127.0.0.1:8000:8000"]
+    environment:
+      DEFUSE_SEED_SCENARIO: "true"
+      DEFUSE_DATABASE_URL: sqlite+aiosqlite:////data/defuse.db
+    volumes: ["engine-data:/data"]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/healthz')"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+  # Optional authority, separate from the engine. Uses existing account access only.
+  broker:
+    profiles: [credentials]
+    build: ./engine
+    command: [uvicorn, defuse.broker.app:create_app, --factory, --host, 0.0.0.0, --port, "8040"]
+    ports: ["127.0.0.1:8040:8040"]
+    environment:
+      DEFUSE_SANDBOX_NAMESPACES: ${DEFUSE_SANDBOX_NAMESPACES:-defuse-sandbox}
+      DEFUSE_BROKER_GITLAB_TOKEN: ${DEFUSE_BROKER_GITLAB_TOKEN:-}
+      DEFUSE_CREDENTIAL_BROKER_TOKEN: ${DEFUSE_CREDENTIAL_BROKER_TOKEN:-}
+      DEFUSE_BROKER_JOURNAL: /data/authority.db
+    volumes: ["broker-data:/data"]
+  web:
+    build: ./web
+    ports: ["127.0.0.1:3000:3000"]
+    environment:
+      DEFUSE_API_BASE: http://engine:8000
+    depends_on:
+      engine:
+        condition: service_healthy
+  sinkhole:
+    build: ./sinkhole
+    ports: ["127.0.0.1:8080:8080"]
+    environment:
+      DEFUSE_SINKHOLE_DATABASE: /data/beacons.db
+    volumes: ["sinkhole-data:/data"]
+volumes:
+  engine-data:
+  sinkhole-data:
+  broker-data:

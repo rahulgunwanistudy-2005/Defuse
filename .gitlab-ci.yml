@@ -1,16 +1,12 @@
-# Defuse product pipeline. Every job uses rules: so it runs only when relevant; the full
-# pipeline stays under 8 minutes with caching. Merges to main go through MRs, so the MR history
-# shows the build. Jobs needing tiers we lack are allow_failure with a comment.
-stages: [lint, test, security, build, provenance, deploy, smoke, detect, defuse]
-
+# Build and verification only. Hosting/deployment is intentionally outside this pipeline.
+stages: [lint, test, build, security, provenance, detect, intake, defuse, record]
 variables:
   UV_SYSTEM_CERTS: "1"
   PIP_DISABLE_PIP_VERSION_CHECK: "1"
-
+  DOCKER_TLS_CERTDIR: /certs
+  CS_IMAGE: $CI_REGISTRY_IMAGE/engine:$CI_COMMIT_SHORT_SHA
 default:
   interruptible: true
-
-# ---------- engine (Python) ----------
 .python:
   image: ghcr.io/astral-sh/uv:python3.12-bookworm-slim
   cache:
@@ -19,25 +15,24 @@ default:
     paths: [engine/.venv]
   before_script:
     - cd engine && uv sync --frozen
-
 lint:engine:
   extends: .python
   stage: lint
   script:
-    - uv run ruff check .
-    - uv run ruff format --check .
+    - uv run ruff check . ../sinkhole/app.py
+    - uv run ruff format --check . ../sinkhole/app.py
     - uv run mypy
+    - uv run python ../scripts/ci_validate_incidents.py
+    - uv run python -m defuse.automate.flow_config --check
   rules:
-    - changes: [engine/**/*]
-
+    - changes: [engine/**/*, sinkhole/**/*, incidents/**/*, .gitlab/**/*, scripts/**/*]
 test:engine:
   extends: .python
   stage: test
   variables:
     HYPOTHESIS_PROFILE: ci
   script:
-    - uv run pytest --cov=defuse --cov-report=term --cov-report=xml:coverage.xml --junitxml=report.xml
-  coverage: '/^TOTAL.+?(\d+\%)$/'
+    - uv run pytest --cov=defuse --cov-fail-under=75 --cov-report=xml:coverage.xml --junitxml=report.xml
   artifacts:
     when: always
     reports:
@@ -46,118 +41,112 @@ test:engine:
         coverage_format: cobertura
         path: engine/coverage.xml
   rules:
-    - changes: [engine/**/*]
-
-# ---------- web (SvelteKit) ----------
+    - changes: [engine/**/*, sinkhole/**/*]
 .node:
-  image: node:22-slim
+  image: node:22-bookworm-slim
   cache:
     key:
       files: [web/package-lock.json]
     paths: [web/node_modules]
   before_script:
-    - cd web && npm ci --no-audit --no-fund
-
+    - cd web && npm ci --ignore-scripts --no-audit --no-fund
 lint:web:
   extends: .node
   stage: lint
-  script:
-    - npm run check
-    - npm run lint
+  script: [npm run check, npm run lint]
   rules:
     - changes: [web/**/*]
-
 test:web:
   extends: .node
   stage: test
+  before_script:
+    - apt-get update && apt-get install -y --no-install-recommends curl ca-certificates
+    - curl -LsSf https://astral.sh/uv/install.sh | sh
+    - export PATH="$HOME/.local/bin:$PATH"
+    - cd engine && uv sync --frozen && cd ../web
+    - npm ci --ignore-scripts --no-audit --no-fund
   script:
     - npx playwright install --with-deps chromium
-    - npm run build
-    - echo "e2e runs against a preview in the full environment"
+    - npm test
+  artifacts:
+    when: always
+    paths: [web/test-results/]
   rules:
-    - changes: [web/**/*]
-      when: manual
-      allow_failure: true
-
-# ---------- security (GitLab templates; tiers we lack are allow_failure) ----------
+    - changes: [web/**/*, engine/**/*]
+test:simulator:
+  extends: .node
+  stage: test
+  before_script: []
+  script: [node simulator/selftest.js]
+  rules:
+    - changes: [simulator/**/*]
 include:
   - template: Security/SAST.gitlab-ci.yml
   - template: Security/Secret-Detection.gitlab-ci.yml
   - template: Security/Dependency-Scanning.gitlab-ci.yml
   - template: Security/Container-Scanning.gitlab-ci.yml
-
 sast:
   stage: security
-  allow_failure: true # SAST reports need Ultimate to render on the MR; the job still runs.
-
-# ---------- build / provenance / deploy wired for the sandbox project ----------
-build:engine:
+  allow_failure: true # Report display depends on the GitLab tier.
+container_scanning:
+  stage: security
+  allow_failure: true
+  rules:
+    - if: $DEFUSE_BUILD_IMAGES == "1"
+build:images:
   stage: build
-  image: gcr.io/kaniko-project/executor:v1.23.2-debug
-  id_tokens:
-    GCP_ID_TOKEN:
-      aud: ${WIF_AUDIENCE}
+  image: docker:27-cli
+  services: [docker:27-dind]
   script:
-    - echo "kaniko build + push engine image to Artifact Registry via WIF; SBOM with syft"
+    - printf '%s' "$CI_REGISTRY_PASSWORD" | docker login "$CI_REGISTRY" -u "$CI_REGISTRY_USER" --password-stdin
+    - IMAGE_PREFIX="$CI_REGISTRY_IMAGE" IMAGE_TAG="$CI_COMMIT_SHORT_SHA" BUILD_OUTPUT=--push sh scripts/build-images.sh
+  artifacts:
+    paths: [build-evidence/]
   rules:
-    - if: $CI_COMMIT_BRANCH == "main"
-      changes: [engine/**/*]
-
-provenance:engine:
+    - if: $DEFUSE_BUILD_IMAGES == "1"
+provenance:verify:
   stage: provenance
+  image: docker:27-cli
+  needs: [build:images]
   script:
-    - echo "glab attestation / SLSA provenance for the engine image; verify before deploy"
+    - printf '%s' "$CI_REGISTRY_PASSWORD" | docker login "$CI_REGISTRY" -u "$CI_REGISTRY_USER" --password-stdin
+    - sh scripts/verify-images.sh
   rules:
-    - if: $CI_COMMIT_BRANCH == "main"
-      changes: [engine/**/*]
-
-deploy:cloudrun:
-  stage: deploy
-  image: google/cloud-sdk:slim
-  environment:
-    name: production
-    url: https://engine-defuse.a.run.app
-  id_tokens:
-    GCP_ID_TOKEN:
-      aud: ${WIF_AUDIENCE}
-  script:
-    - echo "authenticate via Workload Identity Federation (no static keys)"
-    - echo "gcloud run deploy engine web sinkhole --image ... --region us-central1"
-  rules:
-    - if: $CI_COMMIT_BRANCH == "main"
-      when: manual
-
-smoke:
-  stage: smoke
-  image: curlimages/curl:8.10.1
-  script:
-    - curl -fsS "$ENGINE_URL/healthz"
-    - curl -fsS "$ENGINE_URL/api/incidents" -o /dev/null
-  rules:
-    - if: $CI_COMMIT_BRANCH == "main"
-      when: manual
-
-# ---------- the worm detector (fails -> incident-commander flow fires) ----------
+    - if: $DEFUSE_BUILD_IMAGES == "1"
 detect:
   extends: .python
   stage: detect
-  script:
-    - uv run python -m defuse.detector || exit 1
-  allow_failure: false
+  script: [uv run python -m defuse.detector ..]
   rules:
-    - if: $DEFUSE_SCAN == "1"
-
-# ---------- containment: planner job + child pipeline trigger ----------
+    - if: $DEFUSE_SCAN == "1" && $DEFUSE_CLEAN_REBUILD != "1"
+flow:headless:
+  stage: intake
+  image: $DEFUSE_EXECUTOR_IMAGE
+  script:
+    - defuse workflow flow "$DEFUSE_FLOW_REQUEST" --run --output flow-output.json
+  artifacts:
+    paths: [flow-output.json]
+  rules:
+    - if: $DEFUSE_FLOW_REQUEST
+hook:diff-guard:
+  extends: .python
+  stage: lint
+  script:
+    - test -n "$DEFUSE_HOOK_ALLOWLIST" && test -n "$CI_MERGE_REQUEST_DIFF_BASE_SHA"
+    - uv run python ../scripts/ci_diff_guard.py --allowlist "$DEFUSE_HOOK_ALLOWLIST" --base "$CI_MERGE_REQUEST_DIFF_BASE_SHA"
+  rules:
+    - if: $DEFUSE_HOOK_SWEEPER == "1"
 plan:containment:
   extends: .python
   stage: defuse
   script:
-    - uv run defuse plan --out plan.gitlab-ci.yml
+    - uv run defuse workflow prepare "$(uv run python ../scripts/ci_select_incident.py)" plan.gitlab-ci.yml
   artifacts:
     paths: [engine/plan.gitlab-ci.yml]
   rules:
-    - if: $DEFUSE_INCIDENT_ID
-
+    - if: $DEFUSE_INCIDENT_REQUEST && $DEFUSE_CLEAN_REBUILD != "1"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $DEFUSE_CLEAN_REBUILD != "1"
+      changes: [incidents/**/request.json]
 run:containment:
   stage: defuse
   trigger:
@@ -166,4 +155,24 @@ run:containment:
         job: plan:containment
     strategy: depend
   rules:
-    - if: $DEFUSE_INCIDENT_ID
+    - if: $DEFUSE_INCIDENT_REQUEST && $DEFUSE_CLEAN_REBUILD != "1"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $DEFUSE_CLEAN_REBUILD != "1"
+      changes: [incidents/**/request.json]
+postmortem:
+  stage: record
+  image: $DEFUSE_EXECUTOR_IMAGE
+  script:
+    - defuse workflow postmortem "$DEFUSE_INCIDENT_ID" "$DEFUSE_RECORD_PROJECT_ID"
+  rules:
+    - if: $DEFUSE_INCIDENT_ID && $DEFUSE_RECORD_PROJECT_ID && $DEFUSE_CLEAN_REBUILD != "1"
+flow:apply:
+  stage: intake
+  image: $DEFUSE_EXECUTOR_IMAGE
+  needs: [flow:headless]
+  script:
+    - defuse workflow apply-flow "$DEFUSE_FLOW_REQUEST" flow-output.json
+  artifacts:
+    when: always
+    paths: [records/]
+  rules:
+    - if: $DEFUSE_FLOW_REQUEST
