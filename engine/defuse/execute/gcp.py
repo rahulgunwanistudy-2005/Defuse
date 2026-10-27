@@ -8,7 +8,7 @@ project is configured.
 from __future__ import annotations
 
 import asyncio
-import shlex
+import json
 from datetime import UTC, datetime
 
 import structlog
@@ -28,9 +28,10 @@ class RecordingGcpOps:
     async def set_network_tags(self, host: str, tags: list[str]) -> None:
         self._tags[host] = sorted(tags)
 
-    async def snapshot_disk(self, host: str) -> str:
-        name = f"{host}-{datetime.now(UTC).strftime('%Y%m%d-%H%M%S')}"
-        self.snapshots.append(name)
+    async def snapshot_disk(self, host: str, name: str | None = None) -> str:
+        name = name or f"{host}-{datetime.now(UTC).strftime('%Y%m%d-%H%M%S')}"
+        if name not in self.snapshots:
+            self.snapshots.append(name)
         return name
 
     async def run_command(self, host: str, command: str) -> str:
@@ -74,10 +75,29 @@ class GcloudOps:
             f"--tags={','.join(tags)}",
         )
 
-    async def snapshot_disk(self, host: str) -> str:
-        name = f"{host}-{datetime.now(UTC).strftime('%Y%m%d-%H%M%S')}"
+    async def snapshot_disk(self, host: str, name: str | None = None) -> str:
+        name = name or f"{host}-{datetime.now(UTC).strftime('%Y%m%d-%H%M%S')}"
+        present = json.loads(
+            await self._gcloud(
+                "compute", "snapshots", "list", f"--filter=name={name}", "--format=json(name)"
+            )
+        )
+        if present:
+            return name
+        instance = json.loads(
+            await self._gcloud(
+                "compute",
+                "instances",
+                "describe",
+                host,
+                f"--zone={self._zone}",
+                "--format=json(disks)",
+            )
+        )
+        boot = next(d for d in instance["disks"] if d.get("boot"))
+        disk = str(boot["source"]).rsplit("/", 1)[1]
         await self._gcloud(
-            "compute", "disks", "snapshot", host, f"--zone={self._zone}", f"--snapshot-names={name}"
+            "compute", "disks", "snapshot", disk, f"--zone={self._zone}", f"--snapshot-names={name}"
         )
         return name
 
@@ -88,5 +108,5 @@ class GcloudOps:
             host,
             f"--zone={self._zone}",
             "--tunnel-through-iap",
-            f"--command={shlex.quote(command)}",
+            f"--command={command}",
         )

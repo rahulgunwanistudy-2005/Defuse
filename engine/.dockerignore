@@ -1,0 +1,9 @@
+.venv
+*.db
+records
+__pycache__
+.pytest_cache
+.mypy_cache
+.ruff_cache
+.hypothesis
+tests

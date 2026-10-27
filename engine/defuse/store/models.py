@@ -65,3 +65,22 @@ class EventRow(Base):
     message: Mapped[str] = mapped_column(Text, default="")
 
     incident: Mapped[IncidentRow] = relationship(back_populates="events")
+
+
+class ArtifactRow(Base):
+    """Durable metadata context shared by API workers and child pipeline jobs."""
+
+    __tablename__ = "incident_artifacts"
+    incident_id: Mapped[str] = mapped_column(ForeignKey("incidents.id"), primary_key=True)
+    name: Mapped[str] = mapped_column(String(300), primary_key=True)
+    data: Mapped[dict[str, Any]] = mapped_column(JSON)
+
+
+class ActionLeaseRow(Base):
+    """A renewable coordination record; action evidence remains append-only elsewhere."""
+
+    __tablename__ = "action_leases"
+    incident_id: Mapped[str] = mapped_column(ForeignKey("incidents.id"), primary_key=True)
+    action_id: Mapped[str] = mapped_column(String(300), primary_key=True)
+    owner: Mapped[str] = mapped_column(String(32))
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))

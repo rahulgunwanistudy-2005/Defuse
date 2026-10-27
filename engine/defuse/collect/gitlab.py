@@ -13,9 +13,10 @@ from __future__ import annotations
 import asyncio
 import json
 import random
+import re
 from collections.abc import AsyncIterator, Awaitable, Callable, Mapping
 from typing import Any, cast
-from urllib.parse import quote
+from urllib.parse import quote, unquote, urlsplit
 
 import httpx
 import structlog
@@ -119,6 +120,8 @@ class GitLabClient:
         json_body: Any = None,
         headers: Mapping[str, str] | None = None,
     ) -> httpx.Response:
+        if re.match(r"^/api/v4/(projects|groups)/[^/]+/variables(?:/|$)", path):
+            raise GitLabError(method, path, 0, "use GraphQL metadata selection for variables")
         attempt = 0
         while True:
             async with self._semaphore:
@@ -223,6 +226,10 @@ class GitLabClient:
             query = None
 
     async def graphql(self, query: str, variables: Mapping[str, Any]) -> JSON:
+        if re.search(r"\bmutation\b", query):
+            raise NamespaceViolation("GraphQL mutations must use the scoped REST client")
+        if "ciVariables" in query and re.search(r"\bvalue\b", query):
+            raise ValueError("variable queries must request metadata only")
         response = await self._send(
             "POST", "/api/graphql", json_body={"query": query, "variables": dict(variables)}
         )
@@ -256,20 +263,21 @@ class GitLabClient:
         return path
 
     async def mutate_runner(self, runner_id: int, *, json_body: Any) -> JSON:
-        """Pause/unpause a runner after checking it serves at least one sandbox project.
+        """Pause/unpause a runner only when all its projects belong to the sandbox.
 
         Runners are instance-scoped, so the project allowlist cannot gate them directly; we
-        read the runner's projects and refuse unless one is inside the sandbox namespaces.
+        read the runner's projects and refuse if it also serves an outside project.
         """
 
         detail = await self.get(f"/api/v4/runners/{runner_id}")
         projects = detail.get("projects") or []
         paths = [p.get("path_with_namespace", "") for p in projects]
-        if not any(
-            path == ns or path.startswith(ns + "/") for path in paths for ns in self._namespaces
+        if not paths or not all(
+            any(path == ns or path.startswith(ns + "/") for ns in self._namespaces)
+            for path in paths
         ):
             raise NamespaceViolation(
-                f"refusing to change runner {runner_id}: it serves no sandbox project"
+                f"refusing to change runner {runner_id}: all projects must be inside the sandbox"
             )
         if self.dry_run:
             raise DryRunViolation(f"dry run: PUT /api/v4/runners/{runner_id} was not sent")
@@ -287,6 +295,11 @@ class GitLabClient:
         json_body: Any = None,
         params: Mapping[str, Any] | None = None,
     ) -> JSON:
+        decoded = unquote(urlsplit(path).path)
+        if any(part in {".", ".."} for part in decoded.split("/")):
+            raise NamespaceViolation("mutation path must not contain traversal segments")
+        if not path.startswith(f"/api/v4/projects/{encode(project)}/"):
+            raise NamespaceViolation("mutation path does not match the checked sandbox project")
         await self.assert_mutable(project)
         if self.dry_run:
             raise DryRunViolation(f"dry run: {method} {path} was not sent")

@@ -21,6 +21,7 @@ from defuse.model.incident import (
     VerificationCheck,
 )
 from defuse.model.ioc import IOCSet
+from defuse.model.plan import ActionKind
 
 
 async def verify_containment(
@@ -36,6 +37,20 @@ async def verify_containment(
 ) -> Verification:
     graph = build_exposure_graph(ioc, after)
     checks: list[VerificationCheck] = []
+    missing_projects = sorted({p.id for p in before.projects} - {p.id for p in after.projects})
+    incomplete = bool(after.degradations or missing_projects)
+    checks.append(
+        VerificationCheck(
+            id="collection_complete",
+            outcome=CheckOutcome.UNVERIFIED if incomplete else CheckOutcome.PASSED,
+            detail=(
+                f"{len(after.degradations)} collection limitation(s); "
+                f"{len(missing_projects)} previously scoped project(s) not observed"
+                if incomplete
+                else "all scoped projects observed without collection limitations"
+            ),
+        )
+    )
 
     still_resolving = [
         n.label for n in graph.by_kind(NodeKind.JOB) if graph.into(n.id, EdgeKind.RESOLVED_IN)
@@ -88,7 +103,16 @@ async def _sinkhole_check(
     client = http or httpx.AsyncClient(timeout=10.0)
     try:
         response = await client.get(f"{url.rstrip('/')}/beacons", params={"window": window})
-        count = int(response.json().get("count", 0))
+        response.raise_for_status()
+        body = response.json()
+        count = body.get("count") if isinstance(body, dict) else None
+        if type(count) is not int or count < 0:
+            raise ValueError("sinkhole response must contain a non-negative integer count")
+        observed = body.get("observed_seconds")
+        if not isinstance(observed, (int, float)) or observed < window:
+            raise ValueError("sinkhole has not observed the full quiet window")
+        if body.get("complete") is not True:
+            raise ValueError("sinkhole observation is incomplete")
     except (httpx.HTTPError, ValueError) as exc:
         return VerificationCheck(
             id="sinkhole_quiet",
@@ -134,7 +158,18 @@ def compute_metrics(
         return round((end - start).total_seconds(), 1)
 
     first = incident.first_exposure_at
-    containment_end = max((r.finished_at for r in applied), default=None)
+    containment_records = [
+        r
+        for r in records
+        if r.kind not in {ActionKind.VERIFY_CLEAN, ActionKind.RESTORE_AGENT_IDENTITY}
+    ]
+    complete = bool(containment_records) and all(
+        r.status in (RecordStatus.APPLIED, RecordStatus.ALREADY_SATISFIED) and not r.dry_run
+        for r in containment_records
+    )
+    containment_end = (
+        max((r.finished_at for r in containment_records), default=None) if complete else None
+    )
     verified_at = verification.checked_at if verification and verification.passed else None
     return Metrics(
         time_to_detect=span(first, incident.detected_at),
@@ -149,4 +184,6 @@ def compute_metrics(
 def next_status(verification: Verification | None) -> IncidentStatus:
     if verification is None:
         return IncidentStatus.CONTAINED
-    return IncidentStatus.VERIFIED if verification.passed else IncidentStatus.FAILED
+    if any(c.outcome == CheckOutcome.FAILED for c in verification.checks):
+        return IncidentStatus.FAILED
+    return IncidentStatus.VERIFIED if verification.passed else IncidentStatus.CONTAINED

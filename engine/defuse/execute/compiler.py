@@ -29,6 +29,7 @@ class CompileOptions:
     wif_provider: str | None = None
     gcp_service_account: str | None = None
     extra_variables: dict[str, str] = field(default_factory=dict)
+    record_project_id: int | None = None
 
 
 def transitive_reduction(nodes: list[str], edges: list[tuple[str, str]]) -> set[tuple[str, str]]:
@@ -70,6 +71,10 @@ def resource_group(target: str) -> str:
 
 
 def compile_child_pipeline(plan: Plan, options: CompileOptions) -> str:
+    if plan.strategy != "defuse":
+        raise ValueError("the naive baseline is replay-only and cannot be executed")
+    if options.wif_audience and not (options.wif_provider and options.gcp_service_account):
+        raise ValueError("WIF requires a provider and a containment service account")
     order = [a for layer in plan.layers for a in layer]
     actions = {a.id: a for a in plan.actions}
     pending = set(order)
@@ -137,6 +142,18 @@ def compile_child_pipeline(plan: Plan, options: CompileOptions) -> str:
             job["before_script"] = _wif_login(options)
         document[aid] = job
     document.update(gates)
+    if options.record_project_id is not None:
+        document["stages"].append("record")
+        predecessors = {e.before for e in plan.edges if e.before in pending and e.after in pending}
+        terminals = sorted(pending - predecessors)
+        document["publish incident record"] = {
+            "stage": "record",
+            "needs": [{"job": aid, "artifacts": False} for aid in terminals],
+            "script": [
+                f'defuse workflow postmortem "$DEFUSE_INCIDENT_ID" {options.record_project_id}'
+            ],
+            "artifacts": {"when": "always", "paths": ["records/"]},
+        }
     return yaml.safe_dump(document, sort_keys=False, width=100, allow_unicode=True)
 
 

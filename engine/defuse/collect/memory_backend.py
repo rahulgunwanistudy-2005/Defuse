@@ -28,6 +28,8 @@ class MemoryGitLab:
     def _handle(self, request: httpx.Request) -> httpx.Response:
         parts = urlsplit(str(request.url))
         path, query = parts.path, parse_qs(parts.query)
+        if path == "/api/graphql":
+            return graphql_fixture(self._routes[path], json.loads(request.content))
         if request.method in ("POST", "PUT", "DELETE"):
             return self._mutate(request.method, path)
         for key in (f"{path}?{parts.query}", path):
@@ -38,7 +40,7 @@ class MemoryGitLab:
     def _mutate(self, method: str, path: str) -> httpx.Response:
         self.mutations.append((method, path))
         if path.endswith("/rotate"):
-            return httpx.Response(200, json={"id": 9001, "token": "rotated", "active": True})
+            return httpx.Response(200, json={"id": 9001, "active": True})
         if path == "/api/v4/runners/7" and method == "PUT":
             self._routes[path] = {**self._routes[path], "paused": True, "active": False}
             return httpx.Response(200, json={"paused": True})
@@ -73,3 +75,16 @@ def _read(entry: Any, query: dict[str, list[str]]) -> httpx.Response:
             headers["Link"] = f'<https://gitlab.test/next?cursor={cursor + 1}>; rel="next"'
         return httpx.Response(200, json=body, headers=headers)
     return httpx.Response(200, json=entry)
+
+
+def graphql_fixture(entry: Any, body: dict[str, Any]) -> httpx.Response:
+    """Serve metadata-only fixtures; reject accidental secret selection at the transport."""
+    import re
+
+    if re.search(r"\bvalue\b", body["query"]):
+        raise AssertionError("variable query must never select secret contents")
+    kind = "group" if "group(fullPath" in body["query"] else "project"
+    node = entry["entries"].get(f"{kind}:{body['variables']['path']}")
+    if node is not None and "pages" in node:
+        node = node["pages"][int(body["variables"].get("after") or 0)]
+    return httpx.Response(200, json={"data": {kind: {"ciVariables": node} if node else None}})

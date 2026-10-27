@@ -7,8 +7,10 @@ go through GcpOps, which the CLI wires to real gcloud calls or to a recording st
 
 from __future__ import annotations
 
+import hashlib
 from collections.abc import Awaitable, Callable
 from datetime import UTC, datetime
+from shlex import quote
 from typing import Protocol
 
 import structlog
@@ -24,8 +26,15 @@ log = structlog.get_logger(__name__)
 class GcpOps(Protocol):
     async def host_network_tags(self, host: str) -> list[str]: ...
     async def set_network_tags(self, host: str, tags: list[str]) -> None: ...
-    async def snapshot_disk(self, host: str) -> str: ...
+    async def snapshot_disk(self, host: str, name: str | None = None) -> str: ...
     async def run_command(self, host: str, command: str) -> str: ...
+
+
+class AutomationOps(Protocol):
+    async def perform(
+        self, action: Action
+    ) -> tuple[RecordStatus, str, dict[str, StateValue], dict[str, StateValue], str | None]: ...
+    def note(self, record: ActionRecord) -> None: ...
 
 
 class ExecutionContext:
@@ -40,6 +49,7 @@ class ExecutionContext:
         isolation_tag: str,
         live_tag: str,
         clock: Callable[[], datetime] | None = None,
+        simulation: bool = False,
     ) -> None:
         self.incident_id = incident_id
         self.gl = client
@@ -49,6 +59,8 @@ class ExecutionContext:
         self.isolation_tag = isolation_tag
         self.live_tag = live_tag
         self.clock = clock or (lambda: datetime.now(UTC))
+        self.simulation = simulation
+        self.automation: AutomationOps | None = None
 
 
 Handler = Callable[
@@ -78,6 +90,16 @@ async def execute(ctx: ExecutionContext, action: Action) -> ActionRecord:
     try:
         if ctx.dry_run:
             status, detail, before, after, url = await _describe(ctx, action)
+        elif ctx.automation is not None and action.kind in {
+            ActionKind.ROTATE_SECRET,
+            ActionKind.REMOVE_HOOK_FILES,
+            ActionKind.PIN_KNOWN_GOOD,
+            ActionKind.BLOCK_AGENT_IDENTITY,
+            ActionKind.RESTORE_AGENT_IDENTITY,
+            ActionKind.REBUILD_ARTIFACTS,
+            ActionKind.VERIFY_CLEAN,
+        }:
+            status, detail, before, after, url = await ctx.automation.perform(action)
         else:
             status, detail, before, after, url = await handler_fn(ctx, action)
     except DryRunViolation as exc:
@@ -93,7 +115,7 @@ async def execute(ctx: ExecutionContext, action: Action) -> ActionRecord:
             {},
             None,
         )
-    return ActionRecord(
+    record = ActionRecord(
         incident_id=ctx.incident_id,
         action_id=action.id,
         kind=action.kind,
@@ -108,6 +130,9 @@ async def execute(ctx: ExecutionContext, action: Action) -> ActionRecord:
         started_at=started,
         finished_at=ctx.clock(),
     )
+    if ctx.automation is not None:
+        ctx.automation.note(record)
+    return record
 
 
 async def _describe(
@@ -155,7 +180,8 @@ async def _snapshot(
     ctx: ExecutionContext, action: Action
 ) -> tuple[RecordStatus, str, dict[str, StateValue], dict[str, StateValue], str | None]:
     host = _host_name(action.target)
-    snapshot = await ctx.gcp.snapshot_disk(host)
+    digest = hashlib.sha256(f"{ctx.incident_id}:{host}".encode()).hexdigest()[:16]
+    snapshot = await ctx.gcp.snapshot_disk(host, name=f"defuse-{digest}")
     return RecordStatus.APPLIED, f"snapshotted {host}", {}, {"snapshot": snapshot}, None
 
 
@@ -166,7 +192,7 @@ async def _stop_watcher(
     host = action.param("host") or ""
     unit = action.param("unit") or ""
     out = await ctx.gcp.run_command(
-        host, f"systemctl --user stop {unit} && systemctl --user mask {unit}"
+        host, f"systemctl --user stop -- {quote(unit)} && systemctl --user mask -- {quote(unit)}"
     )
     return RecordStatus.APPLIED, f"stopped {unit} on {host}", {}, {"result": out}, None
 
@@ -229,6 +255,15 @@ async def _rotate_secret(
         )
     kind, project_id, token_id = _secret_parts(action.target)
     if kind == SecretKind.PROJECT_ACCESS_TOKEN:
+        if not ctx.simulation:
+            return (
+                RecordStatus.NEEDS_OPERATOR,
+                "replacement credential must be installed by a secure credential broker; "
+                "Defuse does not read or store secret values",
+                {},
+                {},
+                None,
+            )
         result = await ctx.gl.mutate(
             "POST",
             f"/api/v4/projects/{project_id}/access_tokens/{token_id}/rotate",
@@ -385,4 +420,10 @@ async def _restore_agent(
 async def _verify(
     ctx: ExecutionContext, action: Action
 ) -> tuple[RecordStatus, str, dict[str, StateValue], dict[str, StateValue], str | None]:
-    return RecordStatus.APPLIED, "verification runs in the verify stage", {}, {}, None
+    return (
+        RecordStatus.NEEDS_OPERATOR,
+        "post-containment collection, sinkhole and sentinel checks must complete in verification",
+        {},
+        {},
+        None,
+    )

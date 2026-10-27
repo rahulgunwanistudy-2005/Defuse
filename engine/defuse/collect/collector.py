@@ -256,7 +256,7 @@ class Collector:
         out.extend(
             await self._variables_for(
                 f"group/{group}",
-                f"/api/v4/groups/{self._gl_encode(group)}/variables",
+                group,
                 tuple(p.id for p in projects),
             )
         )
@@ -264,7 +264,7 @@ class Collector:
             out.extend(
                 await self._variables_for(
                     f"project/{project.id}",
-                    f"/api/v4/projects/{project.id}/variables",
+                    project.path,
                     (project.id,),
                 )
             )
@@ -275,19 +275,43 @@ class Collector:
     ) -> list[VariableFact]:
         out: list[VariableFact] = []
         try:
-            async for item in self._gl.paginate(path):
-                key = item["key"]
-                out.append(
-                    VariableFact(
-                        owner=owner,
-                        visible_to_projects=visible_to,
-                        key=key,
-                        environment_scope=item.get("environment_scope") or "*",
-                        protected=item.get("protected", False),
-                        masked=item.get("masked", False),
-                        holds_token=self._settings.token_variables.get(key),
+            kind = "group" if owner.startswith("group/") else "project"
+            fields = " ".join(VARIABLE_FIELDS)
+            query = (
+                "query VariableMetadata($path: ID!, $after: String) { "
+                + kind
+                + "(fullPath: $path) { ciVariables(first: 100, after: $after) { "
+                + "nodes { "
+                + fields
+                + " } pageInfo { hasNextPage endCursor } } } }"
+            )
+            cursor: str | None = None
+            while True:
+                data = await self._gl.graphql(query, {"path": path, "after": cursor})
+                resource = data.get(kind)
+                if resource is None:
+                    raise GitLabError("POST", "/api/graphql", 403, "metadata unavailable")
+                connection = resource["ciVariables"]
+                for item in connection["nodes"]:
+                    key = item["key"]
+                    out.append(
+                        VariableFact(
+                            owner=owner,
+                            visible_to_projects=visible_to,
+                            key=key,
+                            environment_scope=item.get("environmentScope") or "*",
+                            protected=item.get("protected", False),
+                            masked=item.get("masked", False),
+                            holds_token=self._settings.token_variables.get(key),
+                        )
                     )
-                )
+                page = connection["pageInfo"]
+                if not page["hasNextPage"]:
+                    break
+                nxt = page["endCursor"]
+                if not nxt or nxt == cursor:
+                    raise GitLabError("POST", "/api/graphql", 200, "invalid metadata cursor")
+                cursor = nxt
         except GitLabError as exc:
             self._degrade("variables", str(exc), f"variables for {owner} unknown")
         return out

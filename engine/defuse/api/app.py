@@ -154,10 +154,16 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         last_event_id: int = 0,
     ) -> StreamingResponse:
         await _row(store, incident_id)
+        try:
+            cursor = max(last_event_id, int(request.headers.get("Last-Event-ID", "0")))
+        except ValueError as exc:
+            raise HTTPException(400, "Last-Event-ID must be an integer") from exc
 
         async def gen() -> AsyncIterator[bytes]:
+            nonlocal cursor
             async with store.events.subscribe(incident_id) as queue:
-                for event in await store.get_events(incident_id, after_seq=last_event_id):
+                for event in await store.get_events(incident_id, after_seq=cursor):
+                    cursor = event["seq"]
                     yield _sse(event)
                 if once:
                     # Deliver the backlog and close. Clients that want live updates omit
@@ -165,11 +171,18 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                     return
                 while not await request.is_disconnected():
                     try:
-                        event = await asyncio.wait_for(queue.get(), timeout=15.0)
+                        event = await asyncio.wait_for(queue.get(), timeout=1.0)
                     except TimeoutError:
+                        # CI jobs and other API workers publish through their own EventBus.
+                        # The database ledger is the shared source of truth across processes.
+                        for persisted in await store.get_events(incident_id, after_seq=cursor):
+                            cursor = persisted["seq"]
+                            yield _sse(persisted)
                         yield b": keep-alive\n\n"
                         continue
-                    yield _sse(event)
+                    if event["seq"] > cursor:
+                        cursor = event["seq"]
+                        yield _sse(event)
 
         return StreamingResponse(
             gen(),

@@ -6,17 +6,19 @@ import asyncio
 from collections import defaultdict
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import Any
+from uuid import uuid4
 
-from sqlalchemy import select
+from sqlalchemy import delete, select, update
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from defuse.model.graph import ExposureGraph
 from defuse.model.incident import ActionRecord, Incident, Metrics, Verification
 from defuse.model.ioc import IOCSet
 from defuse.model.plan import Plan
-from defuse.store.models import ActionRow, Base, EventRow, IncidentRow
+from defuse.store.models import ActionLeaseRow, ActionRow, ArtifactRow, Base, EventRow, IncidentRow
 
 
 class EventBus:
@@ -51,6 +53,70 @@ class Store:
 
     async def dispose(self) -> None:
         await self._engine.dispose()
+
+    @asynccontextmanager
+    async def action_lock(self, incident_id: str, action_id: str) -> AsyncIterator[None]:
+        owner = uuid4().hex
+        now = datetime.now(UTC)
+        expires = now + timedelta(hours=1)
+        try:
+            async with self._session() as session, session.begin():
+                session.add(
+                    ActionLeaseRow(
+                        incident_id=incident_id,
+                        action_id=action_id,
+                        owner=owner,
+                        expires_at=expires,
+                    )
+                )
+        except IntegrityError:
+            async with self._session() as session, session.begin():
+                result = await session.execute(
+                    update(ActionLeaseRow)
+                    .where(
+                        ActionLeaseRow.incident_id == incident_id,
+                        ActionLeaseRow.action_id == action_id,
+                        ActionLeaseRow.expires_at < now,
+                    )
+                    .values(owner=owner, expires_at=expires)
+                )
+                if result.rowcount != 1:  # type: ignore[attr-defined]
+                    raise RuntimeError(
+                        "action is already being executed by another worker"
+                    ) from None
+        try:
+            yield
+        finally:
+            async with self._session() as session, session.begin():
+                await session.execute(
+                    delete(ActionLeaseRow).where(
+                        ActionLeaseRow.incident_id == incident_id,
+                        ActionLeaseRow.action_id == action_id,
+                        ActionLeaseRow.owner == owner,
+                    )
+                )
+
+    async def put_artifact(self, incident_id: str, name: str, payload: dict[str, Any]) -> None:
+        async with self._session() as session, session.begin():
+            row = await session.get(ArtifactRow, (incident_id, name))
+            if row is None:
+                session.add(ArtifactRow(incident_id=incident_id, name=name, data=payload))
+            else:
+                row.data = payload
+
+    async def get_artifact(self, incident_id: str, name: str) -> dict[str, Any] | None:
+        async with self._session() as session:
+            row = await session.get(ArtifactRow, (incident_id, name))
+            return row.data if row is not None else None
+
+    async def artifacts(self, incident_id: str) -> dict[str, dict[str, Any]]:
+        async with self._session() as session:
+            rows = (
+                await session.execute(
+                    select(ArtifactRow).where(ArtifactRow.incident_id == incident_id)
+                )
+            ).scalars()
+            return {row.name: row.data for row in rows}
 
     @asynccontextmanager
     async def session(self) -> AsyncIterator[AsyncSession]:

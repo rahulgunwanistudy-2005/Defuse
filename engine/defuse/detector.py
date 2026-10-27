@@ -7,26 +7,28 @@ what fires the incident-commander flow.
 
 from __future__ import annotations
 
-import os
+import argparse
 import sys
+from collections.abc import Sequence
 from pathlib import Path
 
 import structlog
 
 from defuse.collect.lockfile import parse_npm_lockfile
+from defuse.model.ioc import IOCSet
 from defuse.scenario import scenario_facts, scenario_ioc
 
 log = structlog.get_logger(__name__)
 
 
-def scan_repo(root: Path) -> list[tuple[str, str, str]]:
-    ioc = scenario_ioc()
+def scan_repo(root: Path, iocs: Sequence[IOCSet] | None = None) -> list[tuple[str, str, str]]:
+    active = (scenario_ioc(),) if iocs is None else iocs
     hits: list[tuple[str, str, str]] = []
     for lockfile in root.rglob("package-lock.json"):
         if "node_modules" in lockfile.parts:
             continue
         for name, version, path in parse_npm_lockfile(lockfile.read_text(encoding="utf-8")):
-            if ioc.affected(name, version):
+            if any(ioc.affected(name, version) for ioc in active):
                 hits.append((name, version, f"{lockfile}:{path}"))
     return hits
 
@@ -44,11 +46,27 @@ def provenance_mismatches() -> list[str]:
 
 
 def main(argv: list[str] | None = None) -> int:
-    root = Path(argv[0]) if argv else Path.cwd()
-    hits = scan_repo(root)
-    # Provenance uses collected facts; in this build the scenario stands in for a live scan and
-    # is only consulted when explicitly enabled, so a clean repo is clean.
-    mismatches = provenance_mismatches() if os.environ.get("DEFUSE_SCAN_SCENARIO") == "1" else []
+    parser = argparse.ArgumentParser(description="Scan lockfiles against validated active IOCs")
+    parser.add_argument("root", type=Path, nargs="?", default=Path.cwd())
+    parser.add_argument("--ioc", type=Path, action="append", default=[])
+    parser.add_argument("--scenario", action="store_true", help="use fixture IOC and provenance")
+    args = parser.parse_args(argv)
+    paths = args.ioc or sorted((args.root / "incidents").glob("**/ioc.json"))
+    try:
+        iocs = [IOCSet.model_validate_json(path.read_text()) for path in paths]
+    except (OSError, ValueError) as exc:
+        print(f"DETECTOR: invalid IOC file: {exc}", file=sys.stderr)
+        return 2
+    if args.scenario:
+        iocs.append(scenario_ioc())
+    if not iocs:
+        print(
+            "DETECTOR: no active IOC files; provide --ioc or explicitly use --scenario",
+            file=sys.stderr,
+        )
+        return 2
+    hits = scan_repo(args.root, iocs)
+    mismatches = provenance_mismatches() if args.scenario else []
     for name, version, where in hits:
         log.error("detector.ioc_match", package=name, version=version, where=where)
     for m in mismatches:

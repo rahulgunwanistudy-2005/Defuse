@@ -37,6 +37,22 @@ class Settings(BaseSettings):
     runner_hosts: dict[str, str] = {}
     token_variables: dict[str, str] = {}
     agent_identity_prefixes: str = "duo-,ai-workflow"
+    auto_merge_remediation: bool = False
+    action_timeout: float = 300
+    known_good_refs: dict[str, str] = {}
+    credential_broker_url: str | None = None
+    credential_broker_token: SecretStr | None = None
+    duo_enabled: bool = False
+    duo_timeout: float = 180
+    verification_window: float = 120
+    executor_image: str = "$CI_REGISTRY_IMAGE/engine:$CI_COMMIT_SHORT_SHA"
+    wif_audience: str | None = None
+    wif_provider: str | None = None
+    gcp_service_account: str | None = None
+    record_project_id: int | None = None
+    broker_journal: Path = Path("records/credential-authority.db")
+    broker_gitlab_token: SecretStr | None = None
+    broker_provider_commands: dict[str, list[str]] = {}
 
     @property
     def namespaces(self) -> tuple[str, ...]:

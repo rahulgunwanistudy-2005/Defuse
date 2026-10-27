@@ -90,6 +90,12 @@ class VerificationCheck(BaseModel):
         "sentinel_intact",
         "hooks_removed",
         "secrets_rotated",
+        "collection_complete",
+        "watchers_stopped",
+        "quarantined_versions_absent",
+        "old_credentials_revoked",
+        "hosts_isolated",
+        "source_locks_clean",
     ]
     outcome: CheckOutcome
     detail: str
@@ -103,13 +109,13 @@ class Verification(BaseModel):
 
     @property
     def passed(self) -> bool:
-        """No check failed. Unverified checks are allowed and listed in `unverified`."""
+        """Verification needs positive evidence for every check."""
 
-        return not any(c.outcome == CheckOutcome.FAILED for c in self.checks)
+        return bool(self.checks) and all(c.outcome == CheckOutcome.PASSED for c in self.checks)
 
     @property
     def fully_verified(self) -> bool:
-        return all(c.outcome == CheckOutcome.PASSED for c in self.checks)
+        return self.passed
 
     @property
     def unverified(self) -> tuple[str, ...]:
