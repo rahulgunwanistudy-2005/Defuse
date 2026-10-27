@@ -1,0 +1,100 @@
+{
+  "$defs": {
+    "FileEdit": {
+      "additionalProperties": false,
+      "properties": {
+        "action": {
+          "enum": [
+            "create",
+            "update",
+            "delete"
+          ],
+          "title": "Action",
+          "type": "string"
+        },
+        "content": {
+          "anyOf": [
+            {
+              "maxLength": 2000000,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Content"
+        },
+        "file_path": {
+          "title": "File Path",
+          "type": "string"
+        }
+      },
+      "required": [
+        "action",
+        "file_path"
+      ],
+      "title": "FileEdit",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "description": {
+      "maxLength": 100000,
+      "minLength": 1,
+      "title": "Description",
+      "type": "string"
+    },
+    "edits": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/FileEdit"
+      },
+      "title": "Edits",
+      "type": "array"
+    },
+    "flow": {
+      "enum": [
+        "advisory-intake",
+        "incident-commander",
+        "hook-sweeper",
+        "postmortem-policy"
+      ],
+      "title": "Flow",
+      "type": "string"
+    },
+    "incident_id": {
+      "title": "Incident Id",
+      "type": "string"
+    },
+    "project_id": {
+      "exclusiveMinimum": 0,
+      "title": "Project Id",
+      "type": "integer"
+    },
+    "refused_fields": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Refused Fields",
+      "type": "array"
+    },
+    "title": {
+      "maxLength": 200,
+      "minLength": 3,
+      "title": "Title",
+      "type": "string"
+    }
+  },
+  "required": [
+    "flow",
+    "incident_id",
+    "project_id",
+    "title",
+    "description"
+  ],
+  "title": "FlowDraft",
+  "type": "object"
+}

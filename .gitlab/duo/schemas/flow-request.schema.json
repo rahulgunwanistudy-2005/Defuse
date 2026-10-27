@@ -1,0 +1,87 @@
+{
+  "$defs": {
+    "FileEdit": {
+      "additionalProperties": false,
+      "properties": {
+        "action": {
+          "enum": [
+            "create",
+            "update",
+            "delete"
+          ],
+          "title": "Action",
+          "type": "string"
+        },
+        "content": {
+          "anyOf": [
+            {
+              "maxLength": 2000000,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Content"
+        },
+        "file_path": {
+          "title": "File Path",
+          "type": "string"
+        }
+      },
+      "required": [
+        "action",
+        "file_path"
+      ],
+      "title": "FileEdit",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "allowed_paths": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Allowed Paths",
+      "type": "array"
+    },
+    "expected_edits": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/FileEdit"
+      },
+      "title": "Expected Edits",
+      "type": "array"
+    },
+    "flow": {
+      "title": "Flow",
+      "type": "string"
+    },
+    "goal": {
+      "additionalProperties": true,
+      "title": "Goal",
+      "type": "object"
+    },
+    "incident_id": {
+      "pattern": "^[A-Za-z0-9_.-]{1,64}$",
+      "title": "Incident Id",
+      "type": "string"
+    },
+    "project_id": {
+      "exclusiveMinimum": 0,
+      "title": "Project Id",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "flow",
+    "incident_id",
+    "project_id",
+    "goal",
+    "allowed_paths"
+  ],
+  "title": "FlowRequest",
+  "type": "object"
+}

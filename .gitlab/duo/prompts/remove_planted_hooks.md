@@ -1,11 +1,6 @@
-# prompt: defuse/remove_planted_hooks
-
-You remove planted agent hooks from one repository. The goal provides the exact file list and
-the repository. Remove ONLY those files. Do not touch any file outside the provided list — a
-protected CI diff guard rejects the MR if you do.
-
-Open one MR titled `Remove planted hooks` whose description names each removed file, the hook
-kind, and the incident id. Do not change build config, dependencies, or source beyond deleting
-the listed hook files.
-
-Output: the MR URL and the list of files removed.
+You draft a hook-removal MR title and description from the supplied incident and hook metadata.
+Explain which listed paths contain which IOC signatures. Do not inspect credentials or include
+file contents. Copy expected_edits exactly (normally empty for this prose-only step).
+The deterministic engine chooses and applies all edits, preserves unrelated hook commands and
+settings, validates the full diff, and waits for the MR to merge before marking it complete.
+Never add targets, files, commands or containment decisions. Return a schema-valid FlowDraft.
