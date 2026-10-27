@@ -132,3 +132,47 @@ async def test_not_found_and_forbidden_are_typed() -> None:
             await gl.get("/api/v4/missing")
         with pytest.raises(Forbidden):
             await gl.get("/api/v4/secret")
+
+
+async def test_checked_project_cannot_authorize_a_different_mutation_path() -> None:
+    async with _client(httpx.MockTransport(lambda request: httpx.Response(204))) as gl:
+        with pytest.raises(NamespaceViolation, match="does not match"):
+            await gl.mutate("DELETE", "/api/v4/projects/99/packages/1", project=9)
+        assert gl.requests == 0
+
+
+async def test_runner_serving_outside_projects_cannot_be_paused() -> None:
+    seen: list[str] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen.append(request.method)
+        return httpx.Response(
+            200,
+            json={
+                "projects": [
+                    {"path_with_namespace": "defuse-sandbox/app-a"},
+                    {"path_with_namespace": "production/app"},
+                ]
+            },
+        )
+
+    async with _client(httpx.MockTransport(handler)) as gl:
+        with pytest.raises(NamespaceViolation, match="all projects"):
+            await gl.mutate_runner(7, json_body={"paused": True})
+    assert seen == ["GET"]
+
+
+async def test_rest_variable_reads_are_refused_before_the_request() -> None:
+    from defuse.collect.gitlab import GitLabError
+
+    async with _client(httpx.MockTransport(lambda request: httpx.Response(200, json=[]))) as gl:
+        with pytest.raises(GitLabError, match="GraphQL metadata"):
+            await gl.get("/api/v4/projects/9/variables")
+        assert gl.requests == 0
+
+
+async def test_graphql_secret_selection_is_refused_before_the_request() -> None:
+    async with _client(httpx.MockTransport(lambda request: httpx.Response(200, json={}))) as gl:
+        with pytest.raises(ValueError, match="metadata only"):
+            await gl.graphql("query { project { ciVariables { nodes { key value } } } }", {})
+        assert gl.requests == 0

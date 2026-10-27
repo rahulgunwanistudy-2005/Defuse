@@ -77,6 +77,7 @@ def _ctx(client: GitLabClient, gcp: RecordingGcpOps, dry_run: bool = False) -> E
         dry_run=dry_run,
         isolation_tag="quarantined",
         live_tag="runner-live",
+        simulation=True,
     )
 
 
@@ -118,6 +119,18 @@ async def test_rotate_ci_variable_needs_operator(plan_and_facts) -> None:  # typ
     assert record.status == RecordStatus.NEEDS_OPERATOR
 
 
+async def test_live_rotation_requires_a_secure_replacement_broker(plan_and_facts) -> None:  # type: ignore[no-untyped-def]
+    plan, _ = plan_and_facts
+    async with _client() as client:
+        ctx = _ctx(client, RecordingGcpOps())
+        ctx.simulation = False
+        record = await execute(
+            ctx, plan.action("rotate_secret@secret:project_access_token:project/102:41")
+        )
+        assert record.status == RecordStatus.NEEDS_OPERATOR
+        assert client.requests == 0
+
+
 async def test_quarantine_deletes_located_package(plan_and_facts) -> None:  # type: ignore[no-untyped-def]
     plan, _ = plan_and_facts
     action = plan.action("quarantine_version@pkg:@defuse-sandbox/strings@2.4.1")
@@ -151,3 +164,55 @@ async def test_run_plan_writes_a_record_per_action(plan_and_facts) -> None:  # t
     assert all(r.status != RecordStatus.FAILED for r in records)
     kinds = {r.kind for r in records if r.status == RecordStatus.APPLIED}
     assert ActionKind.ISOLATE_HOST in kinds
+
+
+async def test_failed_isolation_blocks_rotation_and_eradication(plan_and_facts) -> None:  # type: ignore[no-untyped-def]
+    plan, _ = plan_and_facts
+
+    class FailedIsolation(RecordingGcpOps):
+        async def set_network_tags(self, host: str, tags: list[str]) -> None:
+            raise RuntimeError("isolation API unavailable")
+
+    gcp = FailedIsolation({"defuse-runner-1": ["runner-live"]})
+    written: list[ActionRecord] = []
+
+    async def sink(record: ActionRecord) -> None:
+        written.append(record)
+
+    async with _client() as client:
+        records = await run_plan(_ctx(client, gcp), plan, sink)
+    assert records[0].status == RecordStatus.FAILED
+    guarded = {
+        ActionKind.SNAPSHOT_EVIDENCE,
+        ActionKind.STOP_WATCHER,
+        ActionKind.REMOVE_PERSISTENCE,
+    }
+    assert all(r.status == RecordStatus.NEEDS_OPERATOR for r in records if r.kind in guarded)
+    watched = {"secret:deploy_token:project/103:31", "secret:project_access_token:project/102:41"}
+    assert all(
+        r.status == RecordStatus.NEEDS_OPERATOR
+        for r in records
+        if r.target in watched and r.kind in {ActionKind.ROTATE_SECRET, ActionKind.REVOKE_SECRET}
+    )
+    assert not gcp.commands
+    assert not gcp.snapshots
+    assert len(written) == len(plan.actions)
+
+
+async def test_operator_handoff_blocks_dependent_rebuilds(plan_and_facts) -> None:  # type: ignore[no-untyped-def]
+    plan, _ = plan_and_facts
+    written: list[ActionRecord] = []
+
+    async def sink(record: ActionRecord) -> None:
+        written.append(record)
+
+    async with _client() as client:
+        records = await run_plan(_ctx(client, RecordingGcpOps()), plan, sink)
+    assert all(
+        r.status == RecordStatus.NEEDS_OPERATOR
+        for r in records
+        if r.kind == ActionKind.REBUILD_ARTIFACTS
+    )
+    assert all(
+        r.status != RecordStatus.APPLIED for r in records if r.kind == ActionKind.VERIFY_CLEAN
+    )

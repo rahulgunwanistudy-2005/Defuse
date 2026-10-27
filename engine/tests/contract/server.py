@@ -8,6 +8,8 @@ from urllib.parse import parse_qs, urlsplit
 
 import httpx
 
+from defuse.collect.memory_backend import graphql_fixture
+
 FIXTURES = Path(__file__).parent / "fixtures"
 
 
@@ -24,6 +26,8 @@ def make_transport() -> httpx.MockTransport:
         parts = urlsplit(str(request.url))
         path = parts.path
         query = parse_qs(parts.query)
+        if path == "/api/graphql":
+            return graphql_fixture(routes[path], json.loads(request.content))
         for key in (f"{path}?{parts.query}", path):
             if key in routes:
                 return _respond(routes[key], query)

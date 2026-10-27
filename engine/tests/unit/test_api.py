@@ -35,6 +35,8 @@ async def test_scenario_incident_is_browsable(client) -> None:  # type: ignore[n
     incident = (await client.get(f"/api/incidents/{SCENARIO_ID}")).json()
     assert incident["status"] == "verified"
     assert incident["metrics"]["time_to_containment"] > 0
+    assert incident["metrics"]["time_to_verified_remediation"] > 0
+    assert incident["metrics"]["llm_credits"] is None
     assert incident["ioc"]["id"] == "sandbox-loader-worm"
 
 
@@ -75,7 +77,7 @@ async def test_sse_once_streams_the_backlog_then_closes(client) -> None:  # type
     ]
     assert events[0] == "incident.opened"
     assert "graph.grow" in events
-    assert "verified" in events
+    assert "verification.completed" in events
 
 
 async def test_event_bus_fans_out_live_events() -> None:
@@ -88,6 +90,24 @@ async def test_event_bus_fans_out_live_events() -> None:
         event = await asyncio.wait_for(queue.get(), timeout=1.0)
     assert event["kind"] == "note"
     assert queue.empty()
+
+
+async def test_sse_resumes_from_last_event_header(client) -> None:  # type: ignore[no-untyped-def]
+    backlog = (await client.get(f"/api/incidents/{SCENARIO_ID}/events.json")).json()
+    cursor = backlog[-2]["seq"]
+    response = await client.get(
+        f"/api/incidents/{SCENARIO_ID}/events?once=true",
+        headers={"Last-Event-ID": str(cursor)},
+    )
+    ids = [int(line[4:]) for line in response.text.splitlines() if line.startswith("id: ")]
+    assert ids == [backlog[-1]["seq"]]
+
+
+async def test_sse_rejects_invalid_cursor(client) -> None:  # type: ignore[no-untyped-def]
+    response = await client.get(
+        f"/api/incidents/{SCENARIO_ID}/events?once=true", headers={"Last-Event-ID": "invalid"}
+    )
+    assert response.status_code == 400
 
 
 async def test_missing_incident_is_404(client) -> None:  # type: ignore[no-untyped-def]
