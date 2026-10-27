@@ -39,3 +39,10 @@ withEnv({ NPM_TOKEN: 'super-secret-value', PATH: '/usr/bin' }, () => {
 });
 
 console.log('simulator self-test: all guards hold');
+
+// Published fixture packages contain no executable install hooks or propagation loader.
+const fixture = require('./publish-fixture');
+const fixtureManifest = fixture.manifest('2.4.1');
+assert.strictEqual(fixtureManifest.scripts, undefined);
+assert.strictEqual(fixtureManifest.name, '@defuse-sandbox/strings');
+assert.throws(() => fixture.manifest('latest'));

@@ -46,8 +46,9 @@ function beacon() {
 
 function republishSibling() {
   // Only when an over-scoped sandbox deploy token is present (a realistic misconfiguration).
-  // Publishes to the SANDBOX project registry, never npmjs.org, with no matching commit.
-  if (!process.env.CI_DEPLOY_PASSWORD) return;
+  // Records a modeled publication. Real inert fixture publishing is an explicit command
+  // in publish-fixture.js; this install hook never propagates a package.
+  if (!Object.hasOwn(process.env, 'CI_DEPLOY_PASSWORD')) return;
   const marker = path.join(os.tmpdir(), 'defuse-sim-republish.json');
   fs.writeFileSync(
     marker,

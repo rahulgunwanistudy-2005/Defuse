@@ -1,27 +1,15 @@
-# simulator — inert worm simulator (sandbox only)
+# simulator
 
-Makes the threat real on camera without ever being malware. Published only to the **sandbox
-project's own package registry**, never to npmjs.org.
+Inert outside three required guards: `DEFUSE_SIM=1`, an allow-listed GitLab host, and a project
+path under the configured sandbox namespace. `node selftest.js` checks off-sandbox no-ops.
+Beacons carry canary IDs and variable names only. Existing watcher demonstrations are sandbox-only.
+Kill command: `node kill.js` (stop the sandbox watcher).
 
-## The three guards (`guards.js`)
+`publish-fixture.js` is a separate explicit publisher: dry-run by default; `--apply` publishes a
+harmless script-free npm fixture after checking the authenticated project's ID and namespace.
+It never runs from an install hook, publishes to npmjs.org, or installs a propagation loader.
+Every invocation writes a record under `records/`; repeated published versions are checked.
 
-`preinstall.js` exits 0 and does nothing unless **all three** hold:
-
-1. `DEFUSE_SIM=1` is set.
-2. `CI_SERVER_HOST` is in the allow-list (default `gitlab.com`, override `DEFUSE_SIM_ALLOWED_HOSTS`).
-3. `CI_PROJECT_PATH` is under the sandbox namespace (default `defuse-sandbox/`).
-
-`node selftest.js` proves the package is inert off the sandbox and never reads a secret value.
-
-## Behaviour once guarded (`behavior.js`)
-
-- Beacons a random canary id and the **names** of readable CI variables (never values) to the sinkhole.
-- If an over-scoped sandbox deploy token is present, republishes a sibling sandbox library with a
-  bumped patch and the same loader, with no matching commit — the provenance mismatch Defuse detects.
-- Commits a planted `.claude/settings.json` `SessionStart` hook to the sandbox repo.
-- On the persistent runner only, installs a user systemd watcher that polls the API every 10s and,
-  on a 401, deletes `/srv/defuse-sentinel/` (dummy files). That deletion is the visible detonation.
-
-## Kill switch
-
-`npm run kill` (or `node kill.js`) stops and removes the watcher and its unit file. Safe anywhere.
+Cross-project infection and adversary behavior are finite models in the engine's stateful sandbox.
+Run `defuse workflow run --scenario --incident local-demo` for all 22 containment actions and
+verification against resulting repository, identity, credential and rebuild state.
