@@ -20,9 +20,8 @@ plan whose order is *provably* safe — proven by Hypothesis property tests over
 exposure graphs and by an adversary replay that detonates the naive baseline and leaves the
 Defuse plan intact.
 
-> _A 20-second GIF of the replay goes here once recorded against the live sandbox (see
-> `docs/runbook.md`). The replay is reproducible now: `uv run defuse demo` then open the Replay
-> view._
+> Local demonstration: see [the runbook](docs/runbook.md), then open Replay and press Play.
+> The baseline destroys the modeled sentinel; the safe plan preserves it. Live footage is pending.
 
 ## How it works
 
@@ -109,36 +108,46 @@ persistent `e2-small` runner; and a deny-all-egress firewall rule for tag `quara
 ```
 cd engine && uv sync && uv run defuse demo        # seed the scenario, print real metrics
 uv run uvicorn defuse.api.app:create_app --factory --port 8000   # API + SSE, OpenAPI at /docs
-cd ../web && DEFUSE_API=http://localhost:8000 npm install && npm run dev   # console at :5173
+cd ../web && npm ci --ignore-scripts && DEFUSE_API_BASE=http://localhost:8000 npm run dev   # console at :5173
 ```
 
-## Measured results — sandbox scenario
+## Current verification status
 
-The engine ships a deterministic scenario (`uv run defuse demo`) that runs a real containment
-against an in-memory GitLab backend, so these timings come from stored timestamps, not estimates.
-Median of three runs (identical because the scenario clock is deterministic):
+The complete local workflow executes **22 actions** and reaches **verified**, including modeled
+GitLab MRs, credential replacement, agent isolation/restoration, successful rebuild jobs and
+positive state checks. Three fresh runs and full ledgers are in
+[`docs/evidence/local-runs/`](docs/evidence/local-runs/). These are inert modeled transports;
+they do not prove real GitLab/GCP containment. The seeded UI clock is synthetic.
 
-| Metric | Value |
-| --- | --- |
-| Time to detect | 6m 00s |
-| Time to scope | 40s |
-| **Time to containment** | **3m 07s** |
-| **Time to verified remediation** | **3m 21s** |
-| Actions executed | 15 (of 22 planned; 7 hand off to operator/flows) |
-| LLM credits per incident | 3 |
+The free local GitLab-native credential service needs no paid secret-manager subscription.
+Collectors and the containment engine receive metadata only; a separate authority privately
+installs newly issued replacements. See [`docs/credential-broker.md`](docs/credential-broker.md).
+Unsupported external credentials refuse without a configured provider.
 
-Live three-run medians against a provisioned GitLab sandbox + GCP project are produced with
-`docs/runbook.md` and recorded here; this build session had neither (`docs/decisions.md` D3).
+Dockerfiles, local Compose, SBOM/provenance scripts, executable CI, validated headless Duo
+boundaries and deterministic remediation are implemented. Actual Docker image builds, remote CI,
+GitLab/Duo registration and live three-run acceptance evidence remain unverified. Hosting was
+excluded. See [`docs/build-completion.md`](docs/build-completion.md) for exact boundaries.
+
+## Measured results
+
+Local model run details are in [`summary.json`](docs/evidence/local-runs/summary.json).
+Their wall-clock times measure local code and modeled transport, not real incident remediation.
+No live LLM-credit usage or live remediation median is claimed.
+
+The existing local synthetic 500-job graph and plan benchmark measured a median **60.63 ms**,
+with the independent constraint checker passing. Raw data:
+[`docs/review/benchmark.json`](docs/review/benchmark.json).
 
 ## Quality
 
 - `mypy --strict`, `ruff`, `svelte-check`, `eslint` all clean.
-- Engine: 78 tests (unit, contract on recorded-shape fixtures, property). Property tests pass at
+- Engine: **138 passing tests**, **80.80% overall coverage**. Property tests pass at
   **500 examples** per property. Coverage ≥90% on `model`, `graph`, `plan`, `execute/compiler`;
   ≥75% overall.
-- Web: 5 Playwright e2e tests; Lighthouse performance 99–100, accessibility 95–96.
-- GitHub Actions ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) mirrors the engine and
-  web lint+test; `.gitlab-ci.yml` is the product pipeline of record.
+- Web: 11 Playwright checks covering the production build, live-event delivery and mobile views. Previous Lighthouse figures have not been re-measured in this review.
+- GitHub Actions ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) runs the engine and
+  web checks, including browser tests; `.gitlab-ci.yml` is the product pipeline of record.
 
 ## License
 

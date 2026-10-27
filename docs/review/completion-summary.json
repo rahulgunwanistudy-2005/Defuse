@@ -1,0 +1,78 @@
+{
+  "date": "2026-10-27",
+  "engine": {
+    "tests": 138,
+    "failures": 0,
+    "errors": 0,
+    "coverage_percent": 80.8,
+    "core_coverage_percent": 97,
+    "property_examples": 500
+  },
+  "web": {
+    "startTime": "2026-10-27T12:03:22.595Z",
+    "duration": 56210.004,
+    "expected": 11,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "model": {
+    "mode": "stateful-local-model",
+    "live_gitlab": false,
+    "real_credentials": false,
+    "runs": [
+      {
+        "incident_id": "evidence-1",
+        "wall_clock_ms": 544.69,
+        "actions": 22,
+        "status": "verified",
+        "metrics": {
+          "time_to_detect": null,
+          "time_to_scope": 0.0,
+          "time_to_containment": 0.4,
+          "time_to_verified_remediation": 0.4,
+          "actions_executed": 22,
+          "llm_credits": null
+        }
+      },
+      {
+        "incident_id": "evidence-2",
+        "wall_clock_ms": 430.02,
+        "actions": 22,
+        "status": "verified",
+        "metrics": {
+          "time_to_detect": null,
+          "time_to_scope": 0.0,
+          "time_to_containment": 0.3,
+          "time_to_verified_remediation": 0.4,
+          "actions_executed": 22,
+          "llm_credits": null
+        }
+      },
+      {
+        "incident_id": "evidence-3",
+        "wall_clock_ms": 515.27,
+        "actions": 22,
+        "status": "verified",
+        "metrics": {
+          "time_to_detect": null,
+          "time_to_scope": 0.0,
+          "time_to_containment": 0.4,
+          "time_to_verified_remediation": 0.4,
+          "actions_executed": 22,
+          "llm_credits": null
+        }
+      }
+    ],
+    "median_wall_clock_ms": 515.27
+  },
+  "image_build_verified": false,
+  "live_gitlab_verified": false,
+  "hosting_excluded": true,
+  "paid_services_enabled": false,
+  "dependency_audit": {
+    "high": 0,
+    "moderate": 0,
+    "low": 3
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "kind": "local synthetic benchmark, not a GitLab containment run",
+  "jobs": 500,
+  "nodes": 518,
+  "actions": 22,
+  "graph_and_plan_ms": [
+    60.63,
+    61.31,
+    60.54
+  ],
+  "median_ms": 60.63
+}

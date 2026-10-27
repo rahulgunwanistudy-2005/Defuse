@@ -1,0 +1,490 @@
+{
+  "incident_id": "evidence-2",
+  "mode": "sandbox-model",
+  "status": "verified",
+  "metrics": {
+    "time_to_detect": null,
+    "time_to_scope": 0.0,
+    "time_to_containment": 0.3,
+    "time_to_verified_remediation": 0.4,
+    "actions_executed": 22,
+    "llm_credits": null
+  },
+  "verification": {
+    "checked_at": "2026-10-27T12:03:24.562800Z",
+    "checks": [
+      {
+        "id": "collection_complete",
+        "outcome": "passed",
+        "detail": "all scoped projects observed without collection limitations"
+      },
+      {
+        "id": "no_affected_resolution",
+        "outcome": "passed",
+        "detail": "no job resolves an affected version"
+      },
+      {
+        "id": "no_new_publishes",
+        "outcome": "passed",
+        "detail": "no new rogue publishes"
+      },
+      {
+        "id": "sinkhole_quiet",
+        "outcome": "passed",
+        "detail": "0 beacon(s) in the last 120s"
+      },
+      {
+        "id": "sentinel_intact",
+        "outcome": "passed",
+        "detail": "sentinel directory intact"
+      },
+      {
+        "id": "quarantined_versions_absent",
+        "outcome": "passed",
+        "detail": "0 quarantined version(s) still published"
+      },
+      {
+        "id": "old_credentials_revoked",
+        "outcome": "passed",
+        "detail": "0 old exposed identities remain active"
+      },
+      {
+        "id": "hosts_isolated",
+        "outcome": "passed",
+        "detail": "host isolation re-read from provider"
+      },
+      {
+        "id": "source_locks_clean",
+        "outcome": "passed",
+        "detail": "0 affected or missing source lockfile(s)"
+      },
+      {
+        "id": "watchers_stopped",
+        "outcome": "passed",
+        "detail": "watcher service state checked on every affected host"
+      },
+      {
+        "id": "hooks_removed",
+        "outcome": "passed",
+        "detail": "0 planted hook(s) remain"
+      },
+      {
+        "id": "secrets_rotated",
+        "outcome": "passed",
+        "detail": "all containment actions completed"
+      }
+    ]
+  },
+  "actions": [
+    {
+      "incident_id": "evidence-2",
+      "action_id": "isolate_host@host:defuse-runner-1",
+      "kind": "isolate_host",
+      "target": "host:defuse-runner-1",
+      "actor": "defuse",
+      "status": "applied",
+      "dry_run": false,
+      "before": {
+        "tags": [
+          "runner-live"
+        ]
+      },
+      "after": {
+        "tags": [
+          "quarantined"
+        ]
+      },
+      "detail": "swapped network tags on defuse-runner-1",
+      "evidence_url": null,
+      "started_at": "2026-10-27T12:03:24.286124Z",
+      "finished_at": "2026-10-27T12:03:24.286149Z"
+    },
+    {
+      "incident_id": "evidence-2",
+      "action_id": "pause_runner@runner:7",
+      "kind": "pause_runner",
+      "target": "runner:7",
+      "actor": "defuse",
+      "status": "applied",
+      "dry_run": false,
+      "before": {
+        "paused": false
+      },
+      "after": {
+        "paused": true
+      },
+      "detail": "paused runner 7",
+      "evidence_url": null,
+      "started_at": "2026-10-27T12:03:24.299806Z",
+      "finished_at": "2026-10-27T12:03:24.301029Z"
+    },
+    {
+      "incident_id": "evidence-2",
+      "action_id": "quarantine_version@pkg:@defuse-sandbox/strings@2.4.1",
+      "kind": "quarantine_version",
+      "target": "pkg:@defuse-sandbox/strings@2.4.1",
+      "actor": "defuse",
+      "status": "applied",
+      "dry_run": false,
+      "before": {
+        "present": true
+      },
+      "after": {
+        "present": false
+      },
+      "detail": "deleted rogue package 3002",
+      "evidence_url": null,
+      "started_at": "2026-10-27T12:03:24.314774Z",
+      "finished_at": "2026-10-27T12:03:24.315539Z"
+    },
+    {
+      "incident_id": "evidence-2",
+      "action_id": "block_agent_identity@agent:duo-developer-flow:102",
+      "kind": "block_agent_identity",
+      "target": "agent:duo-developer-flow:102",
+      "actor": "defuse",
+      "status": "applied",
+      "dry_run": false,
+      "before": {
+        "access_level": 30
+      },
+      "after": {
+        "access_level": 20
+      },
+      "detail": "agent project writes disabled",
+      "evidence_url": null,
+      "started_at": "2026-10-27T12:03:24.326503Z",
+      "finished_at": "2026-10-27T12:03:24.331297Z"
+    },
+    {
+      "incident_id": "evidence-2",
+      "action_id": "rotate_secret@secret:project_access_token:project/102:42",
+      "kind": "rotate_secret",
+      "target": "secret:project_access_token:project/102:42",
+      "actor": "defuse",
+      "status": "applied",
+      "dry_run": false,
+      "before": {
+        "credential": "release-bot"
+      },
+      "after": {
+        "receipt_id": "sandbox-1",
+        "replacement_id": "replacement-1",
+        "old_revoked": false
+      },
+      "detail": "replacement installed in every credential consumer",
+      "evidence_url": null,
+      "started_at": "2026-10-27T12:03:24.347860Z",
+      "finished_at": "2026-10-27T12:03:24.348695Z"
+    },
+    {
+      "incident_id": "evidence-2",
+      "action_id": "snapshot_evidence@host:defuse-runner-1",
+      "kind": "snapshot_evidence",
+      "target": "host:defuse-runner-1",
+      "actor": "defuse",
+      "status": "applied",
+      "dry_run": false,
+      "before": {},
+      "after": {
+        "snapshot": "defuse-0932b9bda5f974b1"
+      },
+      "detail": "snapshotted defuse-runner-1",
+      "evidence_url": null,
+      "started_at": "2026-10-27T12:03:24.361616Z",
+      "finished_at": "2026-10-27T12:03:24.361651Z"
+    },
+    {
+      "incident_id": "evidence-2",
+      "action_id": "rotate_secret@secret:deploy_token:project/103:31",
+      "kind": "rotate_secret",
+      "target": "secret:deploy_token:project/103:31",
+      "actor": "defuse",
+      "status": "applied",
+      "dry_run": false,
+      "before": {
+        "credential": "strings-publish"
+      },
+      "after": {
+        "receipt_id": "sandbox-2",
+        "replacement_id": "replacement-2",
+        "old_revoked": false
+      },
+      "detail": "replacement installed in every credential consumer",
+      "evidence_url": null,
+      "started_at": "2026-10-27T12:03:24.374805Z",
+      "finished_at": "2026-10-27T12:03:24.375695Z"
+    },
+    {
+      "incident_id": "evidence-2",
+      "action_id": "revoke_secret@secret:project_access_token:project/102:42",
+      "kind": "revoke_secret",
+      "target": "secret:project_access_token:project/102:42",
+      "actor": "defuse",
+      "status": "applied",
+      "dry_run": false,
+      "before": {
+        "active": true
+      },
+      "after": {
+        "active": false
+      },
+      "detail": "revoked project access token",
+      "evidence_url": null,
+      "started_at": "2026-10-27T12:03:24.387172Z",
+      "finished_at": "2026-10-27T12:03:24.387680Z"
+    },
+    {
+      "incident_id": "evidence-2",
+      "action_id": "rotate_secret@secret:ci_variable:group/defuse-sandbox:SENTRY_AUTH_TOKEN",
+      "kind": "rotate_secret",
+      "target": "secret:ci_variable:group/defuse-sandbox:SENTRY_AUTH_TOKEN",
+      "actor": "defuse",
+      "status": "applied",
+      "dry_run": false,
+      "before": {
+        "credential": "SENTRY_AUTH_TOKEN"
+      },
+      "after": {
+        "receipt_id": "sandbox-3",
+        "replacement_id": "replacement-3",
+        "old_revoked": true
+      },
+      "detail": "replacement installed in every credential consumer",
+      "evidence_url": null,
+      "started_at": "2026-10-27T12:03:24.399655Z",
+      "finished_at": "2026-10-27T12:03:24.400278Z"
+    },
+    {
+      "incident_id": "evidence-2",
+      "action_id": "rotate_secret@secret:project_access_token:project/102:41",
+      "kind": "rotate_secret",
+      "target": "secret:project_access_token:project/102:41",
+      "actor": "defuse",
+      "status": "applied",
+      "dry_run": false,
+      "before": {
+        "credential": "hook-bot"
+      },
+      "after": {
+        "receipt_id": "sandbox-4",
+        "replacement_id": "replacement-4",
+        "old_revoked": false
+      },
+      "detail": "replacement installed in every credential consumer",
+      "evidence_url": null,
+      "started_at": "2026-10-27T12:03:24.412258Z",
+      "finished_at": "2026-10-27T12:03:24.412943Z"
+    },
+    {
+      "incident_id": "evidence-2",
+      "action_id": "pin_known_good@project:101",
+      "kind": "pin_known_good",
+      "target": "project:101",
+      "actor": "defuse",
+      "status": "applied",
+      "dry_run": false,
+      "before": {},
+      "after": {
+        "baseline": "0000000000000000000000000000000000000000"
+      },
+      "detail": "trusted manifest and lockfile applied",
+      "evidence_url": "https://gitlab.test/defuse-sandbox/p101/-/merge_requests/1",
+      "started_at": "2026-10-27T12:03:24.422996Z",
+      "finished_at": "2026-10-27T12:03:24.428848Z"
+    },
+    {
+      "incident_id": "evidence-2",
+      "action_id": "pin_known_good@project:102",
+      "kind": "pin_known_good",
+      "target": "project:102",
+      "actor": "defuse",
+      "status": "applied",
+      "dry_run": false,
+      "before": {},
+      "after": {
+        "baseline": "0000000000000000000000000000000000000000"
+      },
+      "detail": "trusted manifest and lockfile applied",
+      "evidence_url": "https://gitlab.test/defuse-sandbox/p102/-/merge_requests/2",
+      "started_at": "2026-10-27T12:03:24.440149Z",
+      "finished_at": "2026-10-27T12:03:24.446362Z"
+    },
+    {
+      "incident_id": "evidence-2",
+      "action_id": "stop_watcher@watcher:defuse-runner-1:defuse-watcher.service",
+      "kind": "stop_watcher",
+      "target": "watcher:defuse-runner-1:defuse-watcher.service",
+      "actor": "defuse",
+      "status": "applied",
+      "dry_run": false,
+      "before": {},
+      "after": {
+        "result": "recorded"
+      },
+      "detail": "stopped defuse-watcher.service on defuse-runner-1",
+      "evidence_url": null,
+      "started_at": "2026-10-27T12:03:24.456219Z",
+      "finished_at": "2026-10-27T12:03:24.456238Z"
+    },
+    {
+      "incident_id": "evidence-2",
+      "action_id": "revoke_secret@secret:deploy_token:project/103:31",
+      "kind": "revoke_secret",
+      "target": "secret:deploy_token:project/103:31",
+      "actor": "defuse",
+      "status": "applied",
+      "dry_run": false,
+      "before": {
+        "revoked": false
+      },
+      "after": {
+        "revoked": true
+      },
+      "detail": "revoked deploy token",
+      "evidence_url": null,
+      "started_at": "2026-10-27T12:03:24.465508Z",
+      "finished_at": "2026-10-27T12:03:24.465883Z"
+    },
+    {
+      "incident_id": "evidence-2",
+      "action_id": "revoke_secret@secret:project_access_token:project/102:41",
+      "kind": "revoke_secret",
+      "target": "secret:project_access_token:project/102:41",
+      "actor": "defuse",
+      "status": "applied",
+      "dry_run": false,
+      "before": {
+        "active": true
+      },
+      "after": {
+        "active": false
+      },
+      "detail": "revoked project access token",
+      "evidence_url": null,
+      "started_at": "2026-10-27T12:03:24.477209Z",
+      "finished_at": "2026-10-27T12:03:24.477651Z"
+    },
+    {
+      "incident_id": "evidence-2",
+      "action_id": "rebuild_artifacts@project:101",
+      "kind": "rebuild_artifacts",
+      "target": "project:101",
+      "actor": "defuse",
+      "status": "applied",
+      "dry_run": false,
+      "before": {},
+      "after": {
+        "pipeline": 7101
+      },
+      "detail": "clean rebuild pipeline succeeded",
+      "evidence_url": "https://gitlab.test/defuse-sandbox/p101/-/pipelines/7101",
+      "started_at": "2026-10-27T12:03:24.487916Z",
+      "finished_at": "2026-10-27T12:03:24.491577Z"
+    },
+    {
+      "incident_id": "evidence-2",
+      "action_id": "rebuild_artifacts@project:102",
+      "kind": "rebuild_artifacts",
+      "target": "project:102",
+      "actor": "defuse",
+      "status": "applied",
+      "dry_run": false,
+      "before": {},
+      "after": {
+        "pipeline": 7102
+      },
+      "detail": "clean rebuild pipeline succeeded",
+      "evidence_url": "https://gitlab.test/defuse-sandbox/p102/-/pipelines/7102",
+      "started_at": "2026-10-27T12:03:24.500906Z",
+      "finished_at": "2026-10-27T12:03:24.506638Z"
+    },
+    {
+      "incident_id": "evidence-2",
+      "action_id": "remove_persistence@host:defuse-runner-1",
+      "kind": "remove_persistence",
+      "target": "host:defuse-runner-1",
+      "actor": "defuse",
+      "status": "applied",
+      "dry_run": false,
+      "before": {},
+      "after": {
+        "result": "recorded"
+      },
+      "detail": "removed persistence on defuse-runner-1",
+      "evidence_url": null,
+      "started_at": "2026-10-27T12:03:24.518855Z",
+      "finished_at": "2026-10-27T12:03:24.518873Z"
+    },
+    {
+      "incident_id": "evidence-2",
+      "action_id": "remove_hook_files@project:102",
+      "kind": "remove_hook_files",
+      "target": "project:102",
+      "actor": "defuse",
+      "status": "applied",
+      "dry_run": false,
+      "before": {},
+      "after": {
+        "paths": [
+          ".claude/settings.json"
+        ]
+      },
+      "detail": "matched hooks removed and target branch checked",
+      "evidence_url": "https://gitlab.test/defuse-sandbox/p102/-/merge_requests/3",
+      "started_at": "2026-10-27T12:03:24.528880Z",
+      "finished_at": "2026-10-27T12:03:24.532850Z"
+    },
+    {
+      "incident_id": "evidence-2",
+      "action_id": "rebuild_artifacts@project:103",
+      "kind": "rebuild_artifacts",
+      "target": "project:103",
+      "actor": "defuse",
+      "status": "applied",
+      "dry_run": false,
+      "before": {},
+      "after": {
+        "pipeline": 7103
+      },
+      "detail": "clean rebuild pipeline succeeded",
+      "evidence_url": "https://gitlab.test/defuse-sandbox/p103/-/pipelines/7103",
+      "started_at": "2026-10-27T12:03:24.548316Z",
+      "finished_at": "2026-10-27T12:03:24.552286Z"
+    },
+    {
+      "incident_id": "evidence-2",
+      "action_id": "verify_clean@incident",
+      "kind": "verify_clean",
+      "target": "incident",
+      "actor": "defuse",
+      "status": "applied",
+      "dry_run": false,
+      "before": {},
+      "after": {},
+      "detail": "all post-containment checks passed",
+      "evidence_url": null,
+      "started_at": "2026-10-27T12:03:24.561559Z",
+      "finished_at": "2026-10-27T12:03:24.575065Z"
+    },
+    {
+      "incident_id": "evidence-2",
+      "action_id": "restore_agent_identity@agent:duo-developer-flow:102",
+      "kind": "restore_agent_identity",
+      "target": "agent:duo-developer-flow:102",
+      "actor": "defuse",
+      "status": "applied",
+      "dry_run": false,
+      "before": {
+        "access_level": 20
+      },
+      "after": {
+        "access_level": 30
+      },
+      "detail": "original agent role restored after verification",
+      "evidence_url": null,
+      "started_at": "2026-10-27T12:03:24.587070Z",
+      "finished_at": "2026-10-27T12:03:24.587763Z"
+    }
+  ]
+}
