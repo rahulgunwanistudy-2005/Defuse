@@ -33,3 +33,7 @@ web/playwright-report/
 !.env.example
 *.db
 records/
+build-evidence/
+
+# Local tooling
+.claude/
