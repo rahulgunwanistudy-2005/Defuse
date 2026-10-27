@@ -1,63 +1,22 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-
-  let theme = $state<'light' | 'dark' | null>(null);
-
+  import Icon from './Icon.svelte';
+  let theme = $state<'light' | 'dark'>('light');
   onMount(() => {
     try {
       const saved = localStorage.getItem('defuse-theme');
-      if (saved === 'light' || saved === 'dark') {
-        theme = saved;
-        document.documentElement.dataset.theme = saved;
-      }
-    } catch {
-      /* storage blocked; fall back to system theme */
-    }
+      if (saved === 'light' || saved === 'dark') theme = saved;
+      document.documentElement.dataset.theme = theme;
+    } catch { /* Use the reference's daylight palette when storage is blocked. */ }
   });
-
   function toggle() {
-    const next =
-      theme === 'dark'
-        ? 'light'
-        : theme === 'light'
-          ? 'dark'
-          : window.matchMedia('(prefers-color-scheme: dark)').matches
-            ? 'light'
-            : 'dark';
-    theme = next;
-    document.documentElement.dataset.theme = next;
-    try {
-      localStorage.setItem('defuse-theme', next);
-    } catch {
-      /* best effort */
-    }
+    theme = theme === 'dark' ? 'light' : 'dark';
+    document.documentElement.dataset.theme = theme;
+    try { localStorage.setItem('defuse-theme', theme); } catch { /* best effort */ }
   }
 </script>
-
-<button class="toggle" onclick={toggle} aria-label="Switch light or dark theme">
-  <span class="dot" aria-hidden="true"></span>
-  {theme ?? 'auto'}
-</button>
-
+<button class="toggle" onclick={toggle} aria-label="Switch light or dark theme" aria-pressed={theme === 'dark'} title={theme === 'dark' ? 'Use light theme' : 'Use dark theme'}><Icon name={theme === 'dark' ? 'moon' : 'sun'} size={17} /></button>
 <style>
-  .toggle {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--s-2);
-    padding: var(--s-1) var(--s-3);
-    border: 1px solid var(--line-strong);
-    border-radius: var(--r-chip);
-    background: transparent;
-    color: var(--text-soft);
-    font-size: var(--t-xs);
-  }
-  .toggle:hover {
-    color: var(--text);
-  }
-  .dot {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    background: var(--dawn);
-  }
+  .toggle { display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; padding: 0; border: 1px solid var(--line); border-radius: 50%; background: var(--card); color: var(--text-soft); }
+  .toggle:hover { color: var(--accent); border-color: var(--accent); }
 </style>

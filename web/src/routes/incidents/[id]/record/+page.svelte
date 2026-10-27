@@ -116,7 +116,7 @@
     margin: 0;
     padding: 0;
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: var(--s-2);
   }
   .check {
@@ -156,6 +156,7 @@
     font-size: var(--t-sm);
   }
   .check-detail {
+    overflow-wrap: anywhere;
     font-size: var(--t-xs);
     color: var(--text-soft);
   }
@@ -245,7 +246,7 @@
       grid-template-columns: repeat(2, 1fr);
     }
     .checks {
-      grid-template-columns: 1fr;
+      grid-template-columns: minmax(0, 1fr);
     }
   }
   @media (max-width: 520px) {

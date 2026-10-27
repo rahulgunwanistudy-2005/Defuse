@@ -185,13 +185,8 @@ export interface IncidentEvent {
   message: string;
 }
 
-const API_BASE =
-  (typeof process !== 'undefined' && process.env?.DEFUSE_API_BASE) ||
-  (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_API_BASE) ||
-  '';
-
 function url(path: string): string {
-  return API_BASE ? API_BASE.replace(/\/$/, '') + path : path;
+  return path;
 }
 
 async function get<T>(fetchFn: typeof fetch, path: string): Promise<T> {
@@ -225,21 +220,31 @@ export function streamEvents(
   let closed = false;
   let delay = 1000;
   let timer: ReturnType<typeof setTimeout> | null = null;
+  let cursor = 0;
 
   const open = () => {
     if (closed) return;
-    source = new EventSource(url(`/api/incidents/${id}/events`));
+    source = new EventSource(url(`/api/incidents/${id}/events?last_event_id=${cursor}`));
     source.onopen = () => {
       delay = 1000;
       onState?.(true);
     };
-    source.onmessage = (ev) => {
+    const receive = (ev: MessageEvent) => {
       try {
-        onEvent(JSON.parse(ev.data) as IncidentEvent);
+        const event = JSON.parse(ev.data) as IncidentEvent;
+        if (event.seq > cursor) {
+          cursor = event.seq;
+          onEvent(event);
+        }
       } catch {
         /* ignore malformed frame */
       }
     };
+    for (const kind of [
+      'incident.opened', 'graph.grow', 'degradation', 'plan.ready',
+      'containment.started', 'action', 'verified', 'verification.completed'
+    ]) source.addEventListener(kind, receive as EventListener);
+    source.onmessage = receive;
     source.onerror = () => {
       source?.close();
       onState?.(false);

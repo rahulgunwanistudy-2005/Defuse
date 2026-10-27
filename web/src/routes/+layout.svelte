@@ -1,188 +1,67 @@
 <script lang="ts">
   import '../app.css';
   import { page } from '$app/stores';
+  import Brand from '$lib/components/Brand.svelte';
+  import Icon from '$lib/components/Icon.svelte';
   import ThemeToggle from '$lib/components/ThemeToggle.svelte';
 
   let { children } = $props();
-
   const views = [
-    { href: '', label: 'Live', hint: 'Incident timeline' },
-    { href: 'map', label: 'Map', hint: 'Exposure graph' },
-    { href: 'plan', label: 'Plan', hint: 'Safe-order DAG' },
-    { href: 'replay', label: 'Replay', hint: 'Naive vs Defuse' },
-    { href: 'record', label: 'Record', hint: 'Metrics & evidence' }
+    { href: '', label: 'Live', icon: 'activity' },
+    { href: 'map', label: 'Map', icon: 'graph' },
+    { href: 'plan', label: 'Plan', icon: 'layers' },
+    { href: 'replay', label: 'Replay', icon: 'play' },
+    { href: 'record', label: 'Record', icon: 'record' }
   ];
-
   const incidentId = $derived($page.params.id);
-  const current = $derived(($page.url.pathname.split('/').pop() ?? '') || '');
-  const activeView = $derived(
-    incidentId && views.some((v) => v.href === current) ? current : 'home'
-  );
+  const current = $derived($page.url.pathname.replace(/\/$/, '').split('/').pop() ?? '');
+  const activeView = $derived(current === incidentId ? '' : current);
 </script>
 
-<div class="shell">
-  <aside class="rail">
-    <a class="brand" href="/">
-      <span class="mark" aria-hidden="true"></span>
-      <span class="word">defuse</span>
-    </a>
-    {#if incidentId}
-      <nav aria-label="Incident views">
-        {#each views as v (v.href)}
-          <a
-            class="navlink"
-            class:active={activeView === v.href}
-            href={`/incidents/${incidentId}/${v.href}`}
-            aria-current={activeView === v.href ? 'page' : undefined}
-          >
-            <span class="navlabel">{v.label}</span>
-            <span class="navhint">{v.hint}</span>
-          </a>
-        {/each}
-      </nav>
-    {:else}
-      <p class="raillead">
-        Worm containment for GitLab CI. Pick an incident to see what it exposed and why the
-        order is safe.
-      </p>
-    {/if}
-    <div class="railfoot">
-      <ThemeToggle />
-      <a class="repo" href="https://github.com/rahulgunwanistudy-2005/Defuse">source</a>
-    </div>
-  </aside>
-  <main class="canvas mist-scroll">
-    {@render children()}
-  </main>
-</div>
+<a class="skip-link" href="#main">Skip to content</a>
+{#if incidentId}
+  <div class="console-shell">
+    <header class="console-header">
+      <Brand />
+      <a class="workspace-back" href="/#incidents">Workspace <Icon name="arrow" size={15} /></a>
+      <div class="header-end"><span class="engine-label"><span></span>Containment console</span><ThemeToggle /></div>
+    </header>
+    <nav class="view-nav" aria-label="Incident views">
+      {#each views as v (v.href)}
+        <a class:active={activeView === v.href} href={`/incidents/${incidentId}/${v.href}`} aria-current={activeView === v.href ? 'page' : undefined}>
+          <Icon name={v.icon} size={17} /><span>{v.label}</span>
+        </a>
+      {/each}
+    </nav>
+    <main id="main" class="console-canvas mist-scroll">{@render children()}</main>
+    <footer class="console-footer"><span>Every action. In the right order.</span><a href="/">defuse</a></footer>
+  </div>
+{:else}
+  <main id="main">{@render children()}</main>
+{/if}
 
 <style>
-  .shell {
-    display: grid;
-    grid-template-columns: var(--rail) 1fr;
-    min-height: 100vh;
-  }
-  .rail {
-    position: sticky;
-    top: 0;
-    align-self: start;
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
-    gap: var(--s-5);
-    padding: var(--s-5) var(--s-4);
-    background: var(--card);
-    border-right: 1px solid var(--line);
-  }
-  .brand {
-    display: flex;
-    align-items: center;
-    gap: var(--s-3);
-    text-decoration: none;
-    font-family: var(--font-display);
-    font-weight: 700;
-    font-size: var(--t-md);
-    letter-spacing: -0.02em;
-  }
-  .mark {
-    width: 20px;
-    height: 20px;
-    border-radius: 6px;
-    background: var(--dawn);
-    box-shadow: 0 0 0 3px var(--constraint-soft);
-  }
-  .raillead {
-    color: var(--text-soft);
-    font-size: var(--t-sm);
-  }
-  nav {
-    display: flex;
-    flex-direction: column;
-    gap: var(--s-1);
-  }
-  .navlink {
-    display: flex;
-    flex-direction: column;
-    padding: var(--s-2) var(--s-3);
-    border-radius: var(--r-sm);
-    text-decoration: none;
-    color: var(--text-soft);
-    border-left: 2px solid transparent;
-    transition: background 0.14s ease, color 0.14s ease;
-  }
-  .navlink:hover {
-    background: var(--card-sunk);
-    color: var(--text);
-  }
-  .navlink.active {
-    background: var(--accent-soft);
-    color: var(--text);
-    border-left-color: var(--accent);
-  }
-  .navlabel {
-    font-family: var(--font-display);
-    font-weight: 600;
-  }
-  .navhint {
-    font-size: var(--t-xs);
-    color: var(--text-faint);
-  }
-  .navlink.active .navhint {
-    color: var(--text-soft);
-  }
-  .railfoot {
-    margin-top: auto;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--s-3);
-    font-size: var(--t-sm);
-  }
-  .repo {
-    color: var(--text-soft);
-    text-decoration: none;
-    border-bottom: 1px solid var(--line-strong);
-  }
-  .repo:hover {
-    color: var(--text);
-  }
-  .canvas {
-    min-width: 0;
-    background: var(--page);
-  }
-
-  @media (max-width: 760px) {
-    .shell {
-      grid-template-columns: 1fr;
-    }
-    .rail {
-      position: static;
-      height: auto;
-      flex-direction: row;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: var(--s-3);
-    }
-    .brand {
-      margin-right: auto;
-    }
-    .raillead {
-      display: none;
-    }
-    nav {
-      flex-direction: row;
-      flex-wrap: wrap;
-      order: 3;
-      width: 100%;
-    }
-    .navlink {
-      flex: 1 1 auto;
-    }
-    .navhint {
-      display: none;
-    }
-    .railfoot {
-      margin-top: 0;
-    }
+  .console-shell { min-height: 100vh; }
+  .console-header { display: flex; align-items: center; gap: 28px; padding: 22px 4%; background: var(--card); border-bottom: 1px solid var(--line); }
+  .workspace-back { display: flex; align-items: center; gap: 8px; color: var(--text-soft); font-size: 13px; text-decoration: none; border-left: 1px solid var(--line); padding-left: 28px; }
+  .workspace-back :global(svg) { transform: rotate(180deg); }
+  .header-end { margin-left: auto; display: flex; align-items: center; gap: 24px; }
+  .engine-label { display: flex; gap: 8px; align-items: center; font-size: 12px; color: var(--text-soft); }
+  .engine-label > span { width: 6px; height: 6px; background: var(--accent); border-radius: 50%; }
+  .view-nav { display: flex; justify-content: center; gap: 5px; width: fit-content; max-width: calc(100% - 32px); margin: 26px auto 0; background: var(--card); border: 1px solid var(--line); border-radius: 100px; padding: 6px; box-shadow: var(--shadow); }
+  .view-nav a { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 23px; border-radius: 100px; color: var(--text-soft); font-size: 14px; text-decoration: none; transition: background .2s, color .2s; }
+  .view-nav a:hover { background: var(--card-sunk); color: var(--text); }
+  .view-nav a.active { background: var(--accent); color: var(--card); }
+  .console-canvas { max-width: 1600px; margin: auto; min-width: 0; }
+  .console-footer { display: flex; justify-content: space-between; max-width: 1504px; margin: auto; padding: 24px 48px; border-top: 1px solid var(--line); font-size: 12px; color: var(--text-faint); }
+  .console-footer a { font-weight: 600; text-decoration: none; }
+  @media (max-width: 700px) {
+    .console-header { padding: 18px 20px; gap: 16px; }
+    .workspace-back { padding-left: 16px; font-size: 12px; }
+    .engine-label { display: none; }
+    .view-nav { gap: 0; margin-top: 20px; width: calc(100% - 32px); }
+    .view-nav a { flex: 1; font-size: 12px; gap: 5px; padding: 10px 6px; }
+    .view-nav :global(svg) { width: 14px; }
+    .console-footer { padding: 24px 20px; }
   }
 </style>

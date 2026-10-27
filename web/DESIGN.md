@@ -1,109 +1,62 @@
-# Defuse console — design plan
+# Defuse frontend: Agentix reference implementation
 
-Two-pass per the frontend-design skill. The brief (session section 7) asks for an EOD /
-incident-command instrument; the owner asks to carry the aesthetic of Emote Agency's "Agentix"
-shot — calm landscapes, open space, modular interface elements floating over the scene, a few
-focused moments, large scannable KPIs — onto that instrument. Those two pull in useful tension:
-a calm, open, almost horizon-like surface makes the one alarming thing (a worm detonating, a
-revoke firing a handler) land harder than another dark-gradient security dashboard would.
+## Brief and sources
 
-## Subject, audience, job
+Recreate the visual language of [Emote Agency’s Agentix landing page](https://dribbble.com/shots/27733315-Agentix-AI-Agents-Landing-Page), wrapping Defuse’s existing deterministic engine and API. Reference inspected on 2026-10-27 through the public Dribbble page and its full-resolution images. Firecrawl was unavailable because the connected account had no remaining credits; the public page and image assets were inspected directly instead.
 
-- **Subject.** Containing a self-replicating supply-chain worm on GitLab CI, in a provably safe
-  order under adversarial triggers.
-- **Audience.** A platform or security engineer mid-incident: stressed, scanning for the truth
-  in seconds, deciding whether the plan's order is safe.
-- **Primary job.** Show what is exposed and why the plan's order will not detonate it.
+Inspected references:
 
-## Pass 1 — tokens
+- [Landscape, centered headline, floating pill navigation and glass tiles](https://cdn.dribbble.com/userupload/49030135/file/d296ff88090f525fa63c96b302591bc2.png)
+- [Lime ticket-shaped metric cards and workflow strip](https://cdn.dribbble.com/userupload/49030134/file/9200caf4cf4d6dbd4fc3dfff84cc6152.png)
+- [Landscape closing section, translucent CTA and lime footer](https://cdn.dribbble.com/userupload/49030136/file/2a4f5099501e2af7f8c35f833f0d0dd5.png)
+- The public animation also showed oversized sequential numerals and cloud illustrations.
 
-### Colour (calm surface, scarce alarm, one expressive gradient)
+The reference is a design presentation, not an inspectable production website. Its CSS, exact typeface, timing curves, breakpoints and hover states are unavailable. The implementation closely follows the inspected composition; the typeface, exact spacing, responsive behavior and motion timing are implementation choices, not extracted values. The scenery is newly generated reference-guided artwork, not an exact source asset.
 
-Agentix trades the dark-gradient AI look for open daylight, so Defuse reads on a cool, calm
-paper — not warm cream (#F4F1EA is the AI tell), not tinted-near-black. Alarm is scarce so it
-means something. One expressive gradient (Agentix's "expressive gradients") is reserved for the
-hero horizon and the detonation moment only.
+## Visual system
 
-- `--mist` `#E7ECF1` — page. A cool, open, slightly-blue daylight, not white, not cream.
-- `--ink` `#16222C` — primary text and structure. A true deep slate-blue, a chosen colour, not a tinted black.
-- `--signal` `#0E8A6B` — safe / primary / "contained". A calm, trustworthy green-teal (the trust play), not acid.
-- `--ember` `#D6402A` — alarm, detonation, failed checks. Used on at most one element per view.
-- `--bond` `#6B4BD6` — the safety-constraint colour. Only C1–C6 edges and their locks wear it, nowhere else, so the plan's safety is legible at a glance. This is where the design spends its boldness.
-- Gradient `--dawn` — `#2E3A8C` indigo → `#E9A23B` amber, a dawn over a ridge. Hero horizon and the detonation sweep only.
+The reference’s whitespace, alpine scenery, soft peach/lavender clouds, olive buttons, lime cards and translucent tiles define the direction. Defuse’s incident data and safety vocabulary replace Agentix’s marketing content. No customer counts or performance claims are imported from the reference.
 
-Phase ramp (the containment stages, a real sequence, so a muted sequential ramp is honest):
-`isolate → preserve → eradicate → rotate → quarantine → rebuild → verify` as seven steps from
-cool slate to signal-green, never rainbow.
+| Role | Value | Evidence |
+| --- | --- | --- |
+| Page | `#FCFCFA` | Published Dribbble palette |
+| Ink | `#171B10` | Visual approximation of dark olive text |
+| Primary olive | `#4B6209` | Visual approximation of reference CTA |
+| Lime | `#B2C446` | Visual approximation of ticket cards/footer |
+| Landscape blue | `#445EB2`, `#16315C` | Published Dribbble palette; carried through artwork |
+| Pastel accent | `#CAA2A4`, `#E6A26C` | Published Dribbble palette; carried through clouds |
+| Alarm | `#B43F32` | Defuse semantic failure state |
+| Constraint | `#586AA4` | Defuse semantic safety edge state |
 
-Dark theme ("night watch") derives from the same tokens: `--ink` becomes the surface near
-`#0F1821`, `--mist` the text, the gradient and the five accents keep their hue with lifted
-lightness so contrast holds.
+`src/lib/tokens.css` is the single source for semantic colors, spacing and shape. Dark mode is a complementary Defuse theme, not a state shown by the reference. Daylight is the default; the user’s theme choice persists.
 
-### Type
+Typography uses DM Sans for both headlines and UI, with regular-weight display text, tight headline tracking, and a restrained italic olive accent. IBM Plex Mono remains limited to literal identifiers, package specs and code. These are chosen equivalents; the reference font could not be verified.
 
-- **Display** — Space Grotesk. Technical, calm, a little mechanical; carries the instrument feel without a serif-display cliché.
-- **Text** — Hanken Grotesk. Humanist, legible at a glance, clearly distinct from the display face in width and warmth.
-- **Mono** — IBM Plex Mono, only where the content is literally code: action ids, secret names, package specs, commit shas. Not for labels (that is a tell).
+## Layout and components
 
-Scale from The Elements of Typographic Style, ~1.25: 12.8 / 16 / 20 / 25 / 31 / 39 / 49. Body
-16px, measure under 72ch. Weights do the emphasis; no all-caps labels, no single-word accent in
-a headline, no eyebrow over every heading.
+- Full-width alpine hero with a centered floating navigation pill, centered two-line headline, working console/replay links, pastel cloud banks, gently drifting frosted squares and two contextual glass panels.
+- Four lime ticket cards showing the connected engine’s incident count and the featured incident’s exposed jobs, executed actions and containment duration. Unavailable values show a dash. Scenario timing is labeled.
+- Three sequential workflow tabs with oversized numerals, cloud/graph illustrations, keyboard support, and links to the real map, plan and evidence views.
+- Engine-backed incident list with search, active/verified filters, manual refresh, explicit empty and disconnected states, and reconnect behavior.
+- Explanatory disclosure rows, a landscape closing CTA, and a lime footer.
+- Incident views share the same typography, palette, rounded cards, capsule navigation, semantic status tones and theme control. Existing graph, plan, replay, ledger and SSE implementations remain connected.
 
-### Layout
+The landing content is centered within a maximum width of 1240px; the hero and closing scene are full bleed. Metrics use four columns, then two on mobile. Workflow and FAQ sections stack on small screens. The incident table becomes wrapping rows. Console navigation remains visible on small screens.
 
-Incident-command board: a quiet left rail of views, an open canvas with real whitespace, modular
-cards floating over a thin horizon gradient at the top of each view. Left-aligned throughout;
-numbers right-aligned in tables. Phase progress is a horizontal placard strip (hazmat/aviation
-checklist), not a stepper with 01/02/03 unless the content is truly ordered — it is, so the
-strip is numbered by phase.
+## Motion and accessibility
 
-```
- ┌───────────────────────────────────────────────────────────────┐
- │  ◇ defuse            ·  incident: @defuse-sandbox loader worm   │  ← thin horizon gradient
- ├────────┬──────────────────────────────────────────────────────┤
- │ Live   │   what is exposed            why the order is safe     │
- │ Map    │   ┌───────────┐  ┌───────────┐  ┌───────────┐          │
- │ Plan   │   │ time to    │  │ secrets    │  │ rogue      │  ← large scannable KPI tiles
- │ Replay │   │ containment│  │ exposed    │  │ versions   │        │
- │ Record │   │   3m 07s   │  │     4      │  │     1      │        │
- │        │   └───────────┘  └───────────┘  └───────────┘          │
- │        │   ░░ horizon fills as the exposure map grows ░░        │
- └────────┴──────────────────────────────────────────────────────┘
-```
+A single 850ms hero entrance, 22-second cloud drift and 9-second glass-tile float recreate the reference’s atmosphere. These timings are chosen approximations. Controls use short state transitions. `prefers-reduced-motion` disables atmospheric movement and smooth scrolling. The existing adversary replay advances only when the user presses Play.
 
-Plan view (the memorable element): ELK layered DAG, phase columns labelled, dependency edges a
-thin grey, **safety-constraint edges in `--bond` with a small lock** and the C-id; hovering an
-action raises a panel naming the constraint that placed it and its critical path.
+Visible focus, a skip link, semantic headings, accessible tab state and arrow-key navigation, named search and theme controls, native disclosure elements, and decorative image alternatives are included.
 
-```
- isolate        preserve     eradicate    rotate         ...   verify
- ┌─────────┐                               ┌─────────┐
- │ isolate │────────dep────────────────────│ rotate  │
- │  host   │══════ C1 🔒 ═══════════════════│ (npm)   │   ══ = constraint edge (--bond)
- └─────────┘                               └─────────┘   ── = dependency (grey)
-```
+## Backend boundary
 
-Replay view: a synchronized split — naive baseline left, Defuse plan right — on one timeline,
-ending with the sentinel shredded on the left and intact on the right; the detonation is the one
-place `--ember` and the `--dawn` sweep appear together.
+The landing loader uses the existing `/api/incidents`, graph and metrics endpoints. The same-origin proxy remains the backend boundary. Navigation opens the existing incident routes. Missing optional graph/metric responses display dashes; a failed incident-list response shows a reconnect state. The interface makes no new mutating requests. The planner, executor, C1–C6 data, sandbox restrictions, secret handling and simulator guards are unchanged.
 
-## Pass 2 — review against the brief and the AI defaults
+## Artwork
 
-Worked through the generic version and cut toward it where I'd drifted:
+- `static/images/alpine-landscape.png`: newly generated alpine lake illustration with white negative space for real HTML content.
+- `static/images/pastel-cloud.png`: newly generated peach/lavender cloud on a transparent background.
+- `static/images/provenance.json`: generation method, reference and exact prompts.
 
-- Not the warm-cream-+-serif-+-terracotta look (#1 tell): the surface is cool daylight, the
-  faces are two grotesques, no terracotta.
-- Not the dark-gradient-acid-accent security-dashboard look: Agentix's whole point, and the
-  brief's, is to avoid it.
-- No SaaS-card-kit: cards share a surface but hierarchy comes from size and the horizon, radii
-  differ by role (tiles 14px, chips 999px, the canvas 0), shadows are one soft token used
-  sparingly, gradients are not decoration — they appear twice.
-- No template chrome: no ALL-CAPS eyebrows, no `A · B · C` meta strings, no `→` glued to links,
-  no mono for ordinary labels. Numbered markers appear only on the phase strip, which is a
-  genuine sequence.
-- Boldness spent in one place: the `--bond` safety edges in the plan view. Everything else is
-  quiet so that reads.
-
-Motion: one orchestrated moment — the exposure map drawing itself in as SSE events arrive on the
-live view, and the replay's two timelines advancing together. No per-card fade-up on scroll.
-`prefers-reduced-motion` drops both to instant state changes.
+Both assets were created with the built-in image generation tool and copied into the project. No marketing text or UI is baked into the artwork.

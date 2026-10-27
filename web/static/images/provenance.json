@@ -1,0 +1,15 @@
+{
+  "method": "Built-in image_gen tool",
+  "reference": "https://dribbble.com/shots/27733315-Agentix-AI-Agents-Landing-Page",
+  "generated": "2026-10-27",
+  "assets": [
+    {
+      "path": "alpine-landscape.png",
+      "prompt": "Use case: stylized-concept. Asset type: full bleed landscape background for a website, 16:10 landscape. Reference image is a style and composition reference only. Create a clean landscape illustration closely matching this alpine scenery: tranquil winding blue lake through layers of blue alpine mountains, taller rocky snowy peak on the right touched by soft peach evening sunlight, dark green pine trees framing left foreground, wildflower meadow and boulders at the bottom edges. Painterly, polished digital illustration with precise beautiful foliage like reference. The upper 58 percent of image is pure white #ffffff empty sky with no texture, so actual webpage text can overlay it; no clouds in this image. Scenery occupies bottom 42 percent, mountains descend toward center lake horizon near 80 percent image height. Left edge trees may rise to 55 percent. Broad open central white space. Preserve blue/periwinkle mountains, warm peach light, yellow green meadow, deep forest green pines. Absolutely no text, logos, interface, cards, glass tiles, border, watermark or frame. Output only the landscape illustration full bleed."
+    },
+    {
+      "path": "pastel-cloud.png",
+      "prompt": "Use case: stylized-concept. Asset type: transparent website illustration. Create a single wide fluffy cumulus cloud cluster matching the pastel cloud illustration in the supplied reference. Soft painterly digital illustration, voluminous airy cloud forms, warm pale yellow and peach upper sunlight, pink coral edges, lavender and periwinkle blue shadow on the flat lower edge. Isolated on genuinely transparent background. Wide low cloud bank roughly 3:1 aspect ratio. No ground, no landscape, no text, no border, no logo, no UI, no other objects."
+    }
+  ]
+}

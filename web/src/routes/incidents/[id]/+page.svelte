@@ -1,26 +1,36 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onMount, untrack } from 'svelte';
+  import { invalidateAll } from '$app/navigation';
   import StatTile from '$lib/components/StatTile.svelte';
   import { streamEvents, fmtDuration, type IncidentEvent } from '$lib/api';
   import type { PageData } from './$types';
 
   let { data }: { data: PageData } = $props();
 
-  let events = $state<IncidentEvent[]>([...data.events]);
+  let events = $state<IncidentEvent[]>(untrack(() => [...data.events]));
   let live = $state(false);
 
   onMount(() => {
     const seen = new Set(events.map((e) => e.seq));
-    return streamEvents(
+    let refresh: ReturnType<typeof setTimeout> | null = null;
+    const close = streamEvents(
       data.id,
       (e) => {
         if (!seen.has(e.seq)) {
           seen.add(e.seq);
           events = [...events, e];
+          if (!refresh) refresh = setTimeout(() => {
+            refresh = null;
+            void invalidateAll();
+          }, 100);
         }
       },
       (state) => (live = state)
     );
+    return () => {
+      close();
+      if (refresh) clearTimeout(refresh);
+    };
   });
 
   const g = $derived(data.graph);
@@ -37,11 +47,12 @@
     'plan.ready': 'Plan ready',
     'containment.started': 'Containment started',
     action: 'Action',
-    verified: 'Verified'
+    verified: 'Verified',
+    'verification.completed': 'Verification checked'
   };
 
   function tone(kind: string, payload: Record<string, unknown>): string {
-    if (kind === 'verified') return (payload.passed as boolean) ? 'safe' : 'alarm';
+    if (kind === 'verified' || kind === 'verification.completed') return (payload.passed as boolean) ? 'safe' : 'warn';
     if (kind === 'degradation') return 'warn';
     if (kind === 'action') {
       const s = (payload.status as string) ?? '';
@@ -64,7 +75,7 @@
       label="Time to containment"
       foot="detected → last action"
     />
-    <StatTile value={String(exposedSecrets)} label="Secrets exposed" foot="rotated in a safe order" />
+    <StatTile value={String(exposedSecrets)} label="Secrets exposed" foot="see the ledger for rotation status" />
     <StatTile value={String(rogue)} label="Rogue versions" tone={rogue ? 'alarm' : 'default'} foot="republished without provenance" />
     <StatTile value={String(jobs)} label="CI jobs infected" foot={`${generations} generation${generations === 1 ? '' : 's'} deep`} />
   </div>
@@ -130,6 +141,7 @@
     align-items: start;
   }
   .col {
+    min-width: 0;
     background: var(--card);
     border: 1px solid var(--line);
     border-radius: var(--r-tile);
@@ -214,6 +226,7 @@
     color: var(--text-faint);
   }
   .event-msg {
+    overflow-wrap: anywhere;
     color: var(--text-soft);
     font-size: var(--t-sm);
   }

@@ -1,11 +1,11 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onMount, untrack } from 'svelte';
   import { PHASE_COLOR } from '$lib/phases';
   import { api, type Action, type Explanation, type OrderingEdge } from '$lib/api';
   import type { PageData } from './$types';
 
   let { data }: { data: PageData } = $props();
-  const plan = data.plan;
+  const plan = untrack(() => data.plan);
   const actionById = new Map(plan.actions.map((a) => [a.id, a]));
   const layerOf = new Map<string, number>();
   plan.layers.forEach((layer, i) => layer.forEach((id) => layerOf.set(id, i)));
@@ -121,8 +121,8 @@
       <h2>Why the order is safe</h2>
       <p class="sub">
         {plan.actions.length} actions in {plan.layers.length} layers. Thin grey edges are
-        dependencies; coloured edges are safety constraints — hover or select an action to see
-        which rule placed it.
+        dependencies; coloured edges are safety constraints. Scroll the graph and select an
+        action to see which rule placed it.
       </p>
     </div>
     <div class="edge-key">
@@ -134,7 +134,7 @@
 
   <div class="plan-grid">
     <div class="canvas-wrap mist-scroll">
-      <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Containment plan graph">
+      <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Containment plan graph">
         <defs>
           <marker id="arrow" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
             <path d="M0,0 L7,3.5 L0,7 Z" fill="var(--line-strong)" />
@@ -174,6 +174,7 @@
               tabindex="0"
               onkeydown={(e) => e.key === 'Enter' && select(n.id)}
             >
+              <title>{n.action.label}</title>
               <rect width={n.w} height={n.h} rx="12" fill="var(--card)" stroke="var(--line-strong)" />
               <rect width="5" height={n.h} rx="2.5" fill={PHASE_COLOR[n.action.phase]} />
               <text class="pphase" x="16" y="20">{n.action.phase}</text>
@@ -268,11 +269,12 @@
   }
   .plan-grid {
     display: grid;
-    grid-template-columns: 1fr 340px;
+    grid-template-columns: minmax(0, 1fr) 340px;
     gap: var(--s-5);
     align-items: start;
   }
   .canvas-wrap {
+    min-width: 0;
     background: var(--canvas);
     border: 1px solid var(--line);
     border-radius: var(--r-tile);
@@ -282,6 +284,7 @@
   svg {
     display: block;
     min-width: 100%;
+    max-width: none;
   }
   .pnode {
     cursor: pointer;

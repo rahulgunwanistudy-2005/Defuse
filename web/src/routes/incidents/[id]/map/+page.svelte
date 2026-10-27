@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onMount, untrack } from 'svelte';
   import {
     forceSimulation,
     forceLink,
@@ -22,13 +22,14 @@
     evidence: string;
   }
 
-  const KINDS = Array.from(new Set(data.graph.nodes.map((n) => n.kind)));
+  const graph = untrack(() => data.graph);
+  const KINDS = Array.from(new Set(graph.nodes.map((n) => n.kind)));
   let active = $state<Set<string>>(new Set(KINDS));
   let selected = $state<Sim | null>(null);
   let W = $state(900);
   let H = $state(560);
 
-  let nodes: Sim[] = data.graph.nodes.map((n, i) => ({
+  let nodes: Sim[] = graph.nodes.map((n, i) => ({
     ...n,
     x: 450 + Math.cos(i) * 180,
     y: 280 + Math.sin(i) * 160,
@@ -36,7 +37,7 @@
     vy: 0
   }));
   const byId = new Map(nodes.map((n) => [n.id, n]));
-  let links: Link[] = data.graph.edges
+  let links: Link[] = graph.edges
     .map((e: GraphEdge) => ({
       source: byId.get(e.src)!,
       target: byId.get(e.dst)!,

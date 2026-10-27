@@ -22,12 +22,17 @@
   <h1>{inc.title}</h1>
   <p class="inc-sub">
     {inc.namespace}
-    {#if inc.work_item_url}· <a href={inc.work_item_url}>work item</a>{/if}
+    {#if inc.work_item_url && inc.origin !== 'scenario'}· <a href={inc.work_item_url}>work item</a>{/if}
   </p>
+  {#if inc.origin === 'scenario'}
+    <p class="inc-sub">Local scenario · modeled services and simulated timings.</p>
+  {/if}
 </header>
 
 <div class="view">
-  {@render children()}
+  {#key inc.id}
+    {@render children()}
+  {/key}
 </div>
 
 <style>

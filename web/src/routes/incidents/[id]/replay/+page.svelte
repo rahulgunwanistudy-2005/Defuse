@@ -1,14 +1,15 @@
 <script lang="ts">
+  import { onDestroy } from 'svelte';
   import type { Action, Plan, Replay, ReplayStep } from '$lib/api';
   import type { PageData } from './$types';
 
   let { data }: { data: PageData } = $props();
 
-  const labels = new Map<string, Action>(
+  const labels = $derived(new Map<string, Action>(
     [...data.plan.actions, ...data.naive.actions].map((a) => [a.id, a])
-  );
+  ));
 
-  const maxSteps = Math.max(data.replay.defuse.steps.length, data.replay.naive.steps.length);
+  const maxSteps = $derived(Math.max(data.replay.defuse.steps.length, data.replay.naive.steps.length));
   let step = $state(0);
   let playing = $state(false);
   let timer: ReturnType<typeof setInterval> | null = null;
@@ -32,6 +33,7 @@
     playing = false;
     if (timer) clearInterval(timer);
   }
+  onDestroy(stop);
 
   function shownSteps(r: Replay): ReplayStep[] {
     return r.steps.slice(0, step + 1);

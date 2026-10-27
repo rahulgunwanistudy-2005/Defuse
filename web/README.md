@@ -1,18 +1,26 @@
-# web
+# Defuse web
 
-The Defuse incident console: SvelteKit 2 + Svelte 5 (runes) + TypeScript, plain CSS tokens.
+SvelteKit 2, Svelte 5 and TypeScript. The Agentix-inspired landscape landing page opens the existing incident console: live timeline (SSE), exposure map, safety plan and explanations, adversary replay, verification evidence and action ledger.
 
-Views: incident list; live timeline (SSE); exposure map (d3-force); plan DAG (ELK layered,
-safety-constraint edges in `--bond`, explain panel); naive-vs-Defuse replay; record (metrics,
-action ledger). Design direction in `DESIGN.md`.
+The landing page reads incidents, exposure counts and metrics from the engine. It includes search, status filters, reconnect and empty states. Scenario data and modeled timings are labeled. The frontend adds no mutation endpoints.
 
-```
-npm install
-DEFUSE_API=http://localhost:8000 npm run dev    # proxies /api to the engine
-npm run check && npm run lint                    # svelte-check + eslint
-npm run build                                    # adapter-node; set VITE_API_BASE for a split origin
-PW_CHROMIUM=/path/to/chromium npm test           # Playwright e2e
+```sh
+npm ci --ignore-scripts
+DEFUSE_API_BASE=http://localhost:8000 npm run dev
+npm run check
+npm run lint
+npm test
 ```
 
-Quality floor met: Lighthouse performance 99–100 and accessibility 95–96, responsive to 375px,
-visible focus, `prefers-reduced-motion` honored, light and dark themes from one token set.
+`npm test` builds the production app and starts it alongside an in-memory seeded engine. Set `PW_CHROMIUM=/path/to/chromium` if a custom browser executable is required.
+
+To run the production build:
+
+```sh
+npm run build
+HOST=127.0.0.1 PORT=5173 DEFUSE_API_BASE=http://localhost:8000 node build
+```
+
+API requests stay on the frontend’s origin and pass through the server-side `/api` proxy, including SSE streams. Configure `DEFUSE_API_BASE` at runtime; `DEFUSE_API` is retained as a fallback.
+
+Visual choices, source references, fidelity limits and artwork provenance are documented in [DESIGN.md](DESIGN.md). The interface defaults to daylight, persists an optional dark theme, supports keyboard navigation and reduced motion, and adapts to mobile widths. Current desktop/mobile screenshots are in `../docs/evidence/frontend/`. Previous Lighthouse figures have not been re-measured for this redesign.
